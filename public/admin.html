@@ -1,0 +1,690 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>성빈약국ON · 관리자</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --ink:#16221f; --ink-soft:#4b5b57; --paper:#f6f4ee; --card:#ffffff;
+  --line:#dfe4de; --pine:#1f4d43; --pine-deep:#123329; --pine-tint:#e7efe9;
+  --amber:#b8863a; --amber-tint:#f6ecd9; --danger:#a8432f; --danger-tint:#f7e9e4;
+  --font-ui: -apple-system, BlinkMacSystemFont, "Pretendard Variable", Pretendard, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+}
+*{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:var(--font-ui);}
+body{display:flex; justify-content:center;}
+#app{width:100%; max-width:640px; min-height:100vh; display:flex; flex-direction:column;}
+
+/* ---- Login ---- */
+#loginScreen{
+  flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding:24px;
+}
+.login-card{
+  width:100%; max-width:340px; background:var(--card); border:1px solid var(--line);
+  border-radius:16px; padding:28px 24px;
+}
+.login-brand{ font-size:17px; font-weight:800; color:var(--pine-deep); margin-bottom:2px; }
+.login-sub{ font-size:12.5px; color:var(--ink-soft); margin-bottom:20px; }
+.field{ margin-bottom:12px; }
+.field label{ display:block; font-size:12px; color:var(--ink-soft); margin-bottom:5px; font-weight:600; }
+.field input{
+  width:100%; font-family:inherit; font-size:14.5px; padding:11px 12px;
+  border:1px solid var(--line); border-radius:9px; background:var(--paper); color:var(--ink);
+  outline:none;
+}
+.field input:focus{ border-color:var(--pine); }
+.btn{
+  border:none; border-radius:10px; font-family:inherit; font-weight:700; cursor:pointer;
+  font-size:14px; padding:11px 16px;
+}
+.btn-primary{ background:var(--pine); color:#fff; width:100%; margin-top:6px; }
+.btn-primary:disabled{ opacity:.5; cursor:default; }
+.btn-ghost{ background:var(--card); color:var(--ink-soft); border:1px solid var(--line); }
+.btn-danger{ background:var(--danger-tint); color:var(--danger); border:1px solid rgba(168,67,47,.25); }
+.btn-sm{ padding:6px 10px; font-size:12px; border-radius:8px; }
+.error-msg{ color:var(--danger); font-size:12.5px; margin-top:10px; display:none; }
+
+/* ---- Header ---- */
+header.top{
+  position:sticky; top:0; z-index:20; background:var(--pine-deep); color:#fff;
+  padding:12px 16px 10px;
+}
+header.top .brandrow{ display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
+header.top .brand{ font-size:14.5px; font-weight:700; }
+header.top .brand small{ font-weight:400; opacity:.7; font-size:10.5px; margin-left:6px;}
+header.top .hdrbtns{ display:flex; gap:6px; }
+header.top .hdrbtn{
+  background:rgba(255,255,255,.12); border:none; color:#fff; font-family:inherit;
+  font-size:11px; padding:6px 9px; border-radius:7px; cursor:pointer;
+}
+.crumbbar{ display:flex; align-items:center; gap:4px; overflow-x:auto; scrollbar-width:none; }
+.crumbbar::-webkit-scrollbar{display:none;}
+.crumb{ flex:0 0 auto; font-size:12.5px; color:rgba(255,255,255,.72); white-space:nowrap; padding:3px 2px; border:none; background:none; font-family:inherit; cursor:pointer;}
+.crumb.current{ color:#fff; font-weight:700; }
+.crumb-sep{ color:rgba(255,255,255,.35); font-size:11px; }
+
+/* ---- Main ---- */
+main{ flex:1; padding:14px 16px 60px; }
+.hidden{ display:none !important; }
+
+.subheadrow{ display:flex; align-items:center; gap:8px; margin-bottom:4px; }
+.backbtn{ border:1px solid var(--line); background:var(--card); width:32px; height:32px; border-radius:9px; font-size:15px; color:var(--ink-soft); cursor:pointer; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+.subtitle{ font-size:16.5px; font-weight:800; flex:1; }
+
+.node-row{
+  display:flex; align-items:center; gap:8px;
+  background:var(--card); border:1px solid var(--line); border-radius:12px;
+  padding:11px 12px; margin-bottom:7px;
+}
+.node-row .label{ flex:1; font-size:14.5px; font-weight:600; cursor:pointer; min-width:0; word-break:break-word; }
+.node-row .miniicon{ background:none; border:none; color:var(--ink-soft); font-size:15px; cursor:pointer; padding:4px 6px; flex:0 0 auto; }
+.node-row .miniicon.on{ color:var(--danger); }
+.node-row input.rename-input{
+  flex:1; font-family:inherit; font-size:14px; padding:7px 9px; border:1px solid var(--pine); border-radius:7px; background:var(--paper); color:var(--ink);
+}
+.refbadge{ font-size:9.5px; font-weight:700; color:var(--danger); background:var(--danger-tint); border-radius:6px; padding:2px 5px; flex:0 0 auto;}
+
+.addrow{ display:flex; gap:7px; margin:10px 0 18px; }
+.addrow input{ flex:1; font-family:inherit; font-size:14px; padding:10px 11px; border:1px solid var(--line); border-radius:9px; background:var(--card); color:var(--ink); }
+.addrow button{ flex:0 0 auto; }
+
+.mergebar{
+  background:var(--amber-tint); border:1px solid rgba(184,134,58,.3); border-radius:11px;
+  padding:11px 13px; margin-bottom:14px; font-size:12.5px; color:var(--amber);
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+}
+
+.section-label{ font-size:12px; font-weight:700; color:var(--ink-soft); margin:16px 2px 8px; }
+
+/* ---- Drug cards (leaf editor) ---- */
+.drug-edit-card{
+  background:var(--card); border:1px solid var(--line); border-left:3px solid var(--pine);
+  border-radius:11px; padding:12px 13px; margin-bottom:9px;
+}
+.drug-edit-card.addon{ border-left-color:var(--amber); }
+.drug-edit-card .name{ font-size:14.5px; font-weight:700; }
+.drug-edit-card .company{ font-size:11px; color:var(--ink-soft); margin-top:1px; margin-bottom:9px;}
+.drug-edit-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+.drug-edit-grid .full{ grid-column:1/-1; }
+.mini-field label{ display:block; font-size:10.5px; color:var(--ink-soft); margin-bottom:3px; font-weight:600; }
+.mini-field input, .mini-field select{
+  width:100%; font-family:inherit; font-size:13px; padding:7px 8px; border:1px solid var(--line);
+  border-radius:7px; background:var(--paper); color:var(--ink);
+}
+.drug-edit-actions{ display:flex; gap:7px; margin-top:2px; }
+
+.addDrugBox{ background:var(--pine-tint); border:1px dashed var(--pine); border-radius:12px; padding:13px; margin-top:8px; }
+.searchResultItem{
+  padding:9px 10px; border:1px solid var(--line); border-radius:8px; margin-top:6px;
+  background:var(--card); cursor:pointer; font-size:13px;
+}
+.searchResultItem b{ font-weight:700; }
+.searchResultItem .sub{ font-size:11px; color:var(--ink-soft); }
+
+.toast{
+  position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+  background:var(--pine-deep); color:#fff; font-size:13px; padding:10px 18px;
+  border-radius:20px; z-index:99; opacity:0; transition:opacity .2s; pointer-events:none;
+}
+.toast.show{ opacity:1; }
+
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(10,20,16,.5); z-index:90;
+  display:flex; align-items:flex-end; justify-content:center;
+}
+.modal-sheet{
+  width:100%; max-width:640px; background:var(--paper); border-radius:16px 16px 0 0;
+  padding:18px 16px calc(18px + env(safe-area-inset-bottom)); max-height:80vh; overflow-y:auto;
+}
+.modal-title{ font-size:15px; font-weight:800; margin-bottom:12px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- LOGIN -->
+  <div id="loginScreen">
+    <div class="login-card">
+      <div class="login-brand">성빈약국ON 관리자</div>
+      <div class="login-sub">증상 트리·추천약·가격을 직접 수정하는 전용 화면입니다.</div>
+      <div class="field">
+        <label>이메일</label>
+        <input type="email" id="loginEmail" autocomplete="username" placeholder="goghkdwp@gmail.com">
+      </div>
+      <div class="field">
+        <label>비밀번호</label>
+        <input type="password" id="loginPassword" autocomplete="current-password" placeholder="비밀번호">
+      </div>
+      <button class="btn btn-primary" id="loginBtn" onclick="doLogin()">로그인</button>
+      <div class="error-msg" id="loginError"></div>
+    </div>
+  </div>
+
+  <!-- MAIN (after login) -->
+  <div id="mainScreen" class="hidden" style="display:flex; flex-direction:column; min-height:100vh;">
+    <header class="top">
+      <div class="brandrow">
+        <div class="brand">성빈약국<small>ON 관리자</small></div>
+        <div class="hdrbtns">
+          <button class="hdrbtn" onclick="openPasswordModal()">비밀번호 변경</button>
+          <button class="hdrbtn" onclick="doLogout()">로그아웃</button>
+        </div>
+      </div>
+      <div class="crumbbar" id="crumbbar"></div>
+    </header>
+    <main>
+      <div id="treeAdmin"></div>
+    </main>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="modalRoot"></div>
+
+<script>
+const SUPABASE_URL = "https://letwvftkomuxxbhnswyf.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxldHd2ZnRrb211eHhiaG5zd3lmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk0NzMyNzYsImV4cCI6MjEwNTA0OTI3Nn0.i_puXrordsKLGyZ71N-8CC8ffrfaOa1BbJRGyWO2bac";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+let PHARMACY_ID = null;
+let NODES = [];         // pharmacy_taxonomy rows
+let LINKS = [];         // taxonomy_drugs rows (with joined drug + price info attached)
+let byId = {};
+let childrenOf = {};
+let linksByTaxonomy = {};
+let currentPath = [];
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+// ================= AUTH =================
+async function doLogin(){
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errEl = document.getElementById('loginError');
+  errEl.style.display = 'none';
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = '로그인 중...';
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  btn.disabled = false; btn.textContent = '로그인';
+  if(error){
+    errEl.textContent = '로그인 실패: ' + error.message;
+    errEl.style.display = 'block';
+    return;
+  }
+  PHARMACY_ID = data.user.id;
+  document.getElementById('loginScreen').classList.add('hidden');
+  document.getElementById('mainScreen').classList.remove('hidden');
+  await loadAll();
+}
+
+async function doLogout(){
+  await sb.auth.signOut();
+  location.reload();
+}
+
+function openPasswordModal(){
+  renderModal(`
+    <div class="modal-title">비밀번호 변경</div>
+    <div class="field"><label>새 비밀번호 (8자 이상)</label><input type="password" id="newPw"></div>
+    <div class="field"><label>새 비밀번호 확인</label><input type="password" id="newPw2"></div>
+    <button class="btn btn-primary" onclick="submitPasswordChange()">변경하기</button>
+    <button class="btn btn-ghost" style="margin-top:8px;width:100%;" onclick="closeModal()">취소</button>
+  `);
+}
+async function submitPasswordChange(){
+  const p1 = document.getElementById('newPw').value;
+  const p2 = document.getElementById('newPw2').value;
+  if(p1.length < 8){ toast('8자 이상 입력해 주세요'); return; }
+  if(p1 !== p2){ toast('비밀번호가 일치하지 않습니다'); return; }
+  const { error } = await sb.auth.updateUser({ password: p1 });
+  if(error){ toast('변경 실패: ' + error.message); return; }
+  toast('비밀번호가 변경되었습니다');
+  closeModal();
+}
+
+// ================= DATA LOAD =================
+async function loadAll(){
+  const [taxRes, linkRes, priceRes] = await Promise.all([
+    sb.from('pharmacy_taxonomy').select('*').eq('pharmacy_id', PHARMACY_ID),
+    sb.from('taxonomy_drugs').select('*, drugs(id,name,company,category,status)'),
+    sb.from('pharmacy_drugs').select('drug_id,purchase_price,sale_price').eq('pharmacy_id', PHARMACY_ID)
+  ]);
+  if(taxRes.error){ toast('노드 로드 실패: '+taxRes.error.message); return; }
+  if(linkRes.error){ toast('연결 로드 실패: '+linkRes.error.message); return; }
+  NODES = taxRes.data;
+  const priceMap = {};
+  (priceRes.data||[]).forEach(p => priceMap[p.drug_id] = p);
+  LINKS = (linkRes.data||[]).filter(l => byIdRaw(NODES, l.taxonomy_id)).map(l => ({
+    id: l.id, taxonomy_id: l.taxonomy_id, tier: l.tier, priority: l.priority, note: l.note,
+    drug_id: l.drug_id,
+    drug_name: l.drugs ? l.drugs.name : '(삭제된 약)',
+    company: l.drugs ? l.drugs.company : null,
+    purchase_price: priceMap[l.drug_id] ? priceMap[l.drug_id].purchase_price : null,
+    sale_price: priceMap[l.drug_id] ? priceMap[l.drug_id].sale_price : null,
+  }));
+  rebuildIndexes();
+  renderTree();
+}
+function byIdRaw(arr, id){ return arr.find(n=>n.id===id); }
+
+function rebuildIndexes(){
+  byId = {}; NODES.forEach(n => byId[n.id]=n);
+  childrenOf = {};
+  NODES.forEach(n => { const p = n.parent_id || '__root__'; (childrenOf[p]=childrenOf[p]||[]).push(n); });
+  Object.values(childrenOf).forEach(list => list.sort((a,b)=>(a.sort_order||0)-(b.sort_order||0)));
+  linksByTaxonomy = {};
+  LINKS.forEach(l => (linksByTaxonomy[l.taxonomy_id]=linksByTaxonomy[l.taxonomy_id]||[]).push(l));
+}
+
+// ================= NAV =================
+function goTo(nodeId){
+  if(nodeId===null){ currentPath = []; }
+  else {
+    const idx = currentPath.indexOf(nodeId);
+    if(idx>=0) currentPath = currentPath.slice(0, idx+1);
+    else currentPath.push(nodeId);
+  }
+  renderTree();
+  window.scrollTo(0,0);
+}
+function goBack(){
+  if(currentPath.length<=1){ goTo(null); }
+  else { goTo(currentPath[currentPath.length-2]); }
+}
+function renderCrumbs(){
+  const bar = document.getElementById('crumbbar');
+  bar.innerHTML = '';
+  const home = document.createElement('button');
+  home.className = 'crumb' + (currentPath.length===0?' current':'');
+  home.textContent = '전체';
+  home.onclick = ()=>goTo(null);
+  bar.appendChild(home);
+  currentPath.forEach((id,i)=>{
+    const sep = document.createElement('span'); sep.className='crumb-sep'; sep.textContent='›';
+    bar.appendChild(sep);
+    const b = document.createElement('button');
+    b.className = 'crumb' + (i===currentPath.length-1?' current':'');
+    b.textContent = byId[id] ? byId[id].label : '?';
+    b.onclick = ()=>goTo(id);
+    bar.appendChild(b);
+  });
+}
+
+// ================= RENDER TREE / NODE LIST =================
+function renderTree(){
+  renderCrumbs();
+  const container = document.getElementById('treeAdmin');
+  const curId = currentPath.length ? currentPath[currentPath.length-1] : '__root__';
+  const kids = childrenOf[curId] || [];
+  const isLeaf = currentPath.length>0 && kids.length===0;
+
+  let html = '';
+  if(currentPath.length>0){
+    const node = byId[curId];
+    html += `<div class="subheadrow">
+      <button class="backbtn" onclick="goBack()">&#8592;</button>
+      <div class="subtitle">${escapeHtml(node.label)}</div>
+      <button class="miniicon" title="이동" onclick="openMoveModal('${curId}')">&#128257;</button>
+      <button class="miniicon" title="병원권유 토글 ${node.suggest_referral?'(켜짐)':''}" onclick="toggleReferral('${curId}')">${node.suggest_referral?'&#128658;':'&#127973;'}</button>
+    </div>`;
+  } else {
+    html += `<div class="section-label">전체 계통 (탭하여 이동)</div>`;
+  }
+
+  if(isLeaf){
+    // auto-merge suggestion at parent level is offered on parent, not leaf itself; leaf shows drug editor
+    html += renderDrugEditor(curId);
+    container.innerHTML = html;
+    return;
+  }
+
+  // if current node (non-root) has exactly 1 child and that child is itself a leaf with no sub-children -> offer merge
+  if(currentPath.length>0 && kids.length===1 && (childrenOf[kids[0].id]||[]).length===0){
+    html += `<div class="mergebar">
+      <span>이 항목은 자식이 "${escapeHtml(kids[0].label)}" 하나뿐이고 더 분기되지 않습니다. 생략하고 바로 병합할까요?</span>
+      <button class="btn btn-sm btn-primary" style="background:var(--amber);" onclick="mergeOnlyChild('${curId}','${kids[0].id}')">병합</button>
+    </div>`;
+  }
+
+  html += '<div class="node-list">';
+  kids.forEach(k=>{
+    html += `<div class="node-row" id="row-${k.id}">
+      <span class="label" onclick="goTo('${k.id}')">${escapeHtml(k.label)}</span>
+      ${k.suggest_referral ? '<span class="refbadge">병원권유</span>' : ''}
+      <button class="miniicon" title="이름변경" onclick="startRename('${k.id}')">&#9998;</button>
+      <button class="miniicon" title="이동" onclick="openMoveModal('${k.id}')">&#128257;</button>
+      <button class="miniicon on" title="삭제" onclick="deleteNode('${k.id}')">&#128465;</button>
+    </div>`;
+  });
+  html += '</div>';
+  html += `<div class="addrow">
+    <input type="text" id="newNodeInput" placeholder="새 항목 이름 입력">
+    <button class="btn btn-primary btn-sm" onclick="addChildNode('${currentPath.length?curId:'__root__'}')">+ 추가</button>
+  </div>`;
+
+  container.innerHTML = html;
+}
+
+function escapeHtml(s){
+  return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ---- rename ----
+function startRename(nodeId){
+  const row = document.getElementById('row-'+nodeId);
+  const node = byId[nodeId];
+  row.innerHTML = `
+    <input class="rename-input" id="renameInput-${nodeId}" value="${escapeHtml(node.label)}">
+    <button class="miniicon" title="저장" onclick="submitRename('${nodeId}')">&#9989;</button>
+    <button class="miniicon" title="취소" onclick="renderTree()">&#10060;</button>
+  `;
+  document.getElementById('renameInput-'+nodeId).focus();
+}
+async function submitRename(nodeId){
+  const val = document.getElementById('renameInput-'+nodeId).value.trim();
+  if(!val){ toast('이름을 입력해 주세요'); return; }
+  const { error } = await sb.from('pharmacy_taxonomy').update({label:val}).eq('id', nodeId);
+  if(error){ toast('저장 실패: '+error.message); return; }
+  byId[nodeId].label = val;
+  toast('이름이 변경되었습니다');
+  renderTree();
+}
+
+// ---- add child ----
+async function addChildNode(parentIdRaw){
+  const input = document.getElementById('newNodeInput');
+  const label = input.value.trim();
+  if(!label){ toast('이름을 입력해 주세요'); return; }
+  const parent_id = parentIdRaw === '__root__' ? null : parentIdRaw;
+  const siblings = childrenOf[parentIdRaw] || [];
+  const sort_order = siblings.length ? Math.max(...siblings.map(s=>s.sort_order||0)) + 1 : 1;
+  const { data, error } = await sb.from('pharmacy_taxonomy')
+    .insert({ pharmacy_id: PHARMACY_ID, parent_id, label, sort_order, suggest_referral:false })
+    .select().single();
+  if(error){ toast('추가 실패: '+error.message); return; }
+  NODES.push(data);
+  rebuildIndexes();
+  toast('추가되었습니다');
+  renderTree();
+}
+
+// ---- delete ----
+async function deleteNode(nodeId){
+  const hasKids = (childrenOf[nodeId]||[]).length>0;
+  const hasDrugs = (linksByTaxonomy[nodeId]||[]).length>0;
+  if(hasKids || hasDrugs){
+    if(!confirm('이 항목에는 하위 항목 또는 연결된 약이 있습니다. 정말 삭제하시겠습니까?\n(하위 항목·약 연결도 함께 삭제될 수 있습니다)')) return;
+  } else {
+    if(!confirm('이 항목을 삭제하시겠습니까?')) return;
+  }
+  const { error } = await sb.from('pharmacy_taxonomy').delete().eq('id', nodeId);
+  if(error){ toast('삭제 실패: '+error.message); return; }
+  NODES = NODES.filter(n=>n.id!==nodeId);
+  LINKS = LINKS.filter(l=>l.taxonomy_id!==nodeId);
+  rebuildIndexes();
+  toast('삭제되었습니다');
+  renderTree();
+}
+
+// ---- referral toggle ----
+async function toggleReferral(nodeId){
+  const node = byId[nodeId];
+  const next = !node.suggest_referral;
+  const { error } = await sb.from('pharmacy_taxonomy').update({suggest_referral:next}).eq('id', nodeId);
+  if(error){ toast('변경 실패: '+error.message); return; }
+  node.suggest_referral = next;
+  toast(next ? '병원권유로 표시했습니다' : '병원권유 표시를 해제했습니다');
+  renderTree();
+}
+
+// ---- merge single-child pass-through ----
+async function mergeOnlyChild(parentId, childId){
+  if(!confirm('분기 없는 하위 항목을 생략하고, 그 약 연결을 이 항목으로 합칠까요?')) return;
+  const { error: e1 } = await sb.from('taxonomy_drugs').update({taxonomy_id:parentId}).eq('taxonomy_id', childId);
+  if(e1){ toast('병합 실패: '+e1.message); return; }
+  const { error: e2 } = await sb.from('pharmacy_taxonomy').delete().eq('id', childId);
+  if(e2){ toast('병합 실패(삭제 단계): '+e2.message); return; }
+  LINKS.forEach(l => { if(l.taxonomy_id===childId) l.taxonomy_id = parentId; });
+  NODES = NODES.filter(n=>n.id!==childId);
+  rebuildIndexes();
+  toast('병합되었습니다');
+  renderTree();
+}
+
+// ---- move / reparent ----
+function openMoveModal(nodeId){
+  const descendants = getDescendantIds(nodeId);
+  const excluded = new Set([nodeId, ...descendants]);
+  const options = NODES.filter(n => !excluded.has(n.id));
+  let listHtml = `<div class="searchResultItem" onclick="submitMove('${nodeId}', null)"><b>전체 (최상위 계통으로)</b></div>`;
+  options.sort((a,b)=>a.label.localeCompare(b.label,'ko')).forEach(n=>{
+    listHtml += `<div class="searchResultItem" onclick="submitMove('${nodeId}','${n.id}')"><b>${escapeHtml(n.label)}</b><div class="sub">${pathLabel(n.id)}</div></div>`;
+  });
+  renderModal(`
+    <div class="modal-title">"${escapeHtml(byId[nodeId].label)}" 이동할 위치 선택</div>
+    <input type="text" placeholder="검색..." oninput="filterMoveList(this.value)" style="width:100%;padding:10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:13px;margin-bottom:8px;">
+    <div id="moveList">${listHtml}</div>
+  `);
+}
+function pathLabel(nodeId){
+  const chain = [];
+  let cur = byId[nodeId];
+  while(cur){ chain.unshift(cur.label); cur = cur.parent_id ? byId[cur.parent_id] : null; }
+  return chain.join(' › ');
+}
+function filterMoveList(q){
+  q = q.trim().toLowerCase();
+  document.querySelectorAll('#moveList .searchResultItem').forEach(el=>{
+    el.style.display = el.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+function getDescendantIds(nodeId){
+  const out = [];
+  const stack = [...(childrenOf[nodeId]||[])];
+  while(stack.length){
+    const n = stack.pop();
+    out.push(n.id);
+    (childrenOf[n.id]||[]).forEach(c=>stack.push(c));
+  }
+  return out;
+}
+async function submitMove(nodeId, newParentId){
+  const { error } = await sb.from('pharmacy_taxonomy').update({parent_id:newParentId}).eq('id', nodeId);
+  if(error){ toast('이동 실패: '+error.message); return; }
+  byId[nodeId].parent_id = newParentId;
+  rebuildIndexes();
+  closeModal();
+  toast('이동되었습니다');
+  currentPath = currentPath.filter(id => byId[id]); // drop stale path if needed
+  renderTree();
+}
+
+// ================= LEAF DRUG EDITOR =================
+function renderDrugEditor(nodeId){
+  const recs = linksByTaxonomy[nodeId] || [];
+  const primaries = recs.filter(r=>r.tier==='primary').sort((a,b)=>a.priority-b.priority);
+  const addons = recs.filter(r=>r.tier==='add_on').sort((a,b)=>a.priority-b.priority);
+  let html = '';
+  if(recs.length===0){
+    html += `<div class="section-label">등록된 추천약이 없습니다</div>`;
+  }
+  if(primaries.length){
+    html += `<div class="section-label">기본 추천</div>`;
+    primaries.forEach(r => html += drugCardHtml(r,''));
+  }
+  if(addons.length){
+    html += `<div class="section-label">추가·대안</div>`;
+    addons.forEach(r => html += drugCardHtml(r,'addon'));
+  }
+  html += `<div class="addDrugBox">
+    <div style="font-size:13px;font-weight:700;margin-bottom:8px;">+ 약 추가</div>
+    <input type="text" id="drugSearchInput" placeholder="약 이름 검색..." oninput="searchDrugs(this.value)" style="width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font-family:inherit;font-size:13px;">
+    <div id="drugSearchResults"></div>
+  </div>`;
+  return html;
+}
+
+function drugCardHtml(r, cls){
+  return `<div class="drug-edit-card ${cls}" id="drugcard-${r.id}">
+    <div class="name">${escapeHtml(r.drug_name)}</div>
+    <div class="company">${escapeHtml(r.company || '건강기능식품 등')}</div>
+    <div class="drug-edit-grid">
+      <div class="mini-field">
+        <label>구분</label>
+        <select id="tier-${r.id}">
+          <option value="primary" ${r.tier==='primary'?'selected':''}>기본 추천</option>
+          <option value="add_on" ${r.tier==='add_on'?'selected':''}>추가·대안</option>
+        </select>
+      </div>
+      <div class="mini-field">
+        <label>우선순위</label>
+        <input type="number" min="1" id="priority-${r.id}" value="${r.priority}">
+      </div>
+      <div class="mini-field">
+        <label>사입가</label>
+        <input type="number" id="purchase-${r.id}" value="${r.purchase_price!=null?r.purchase_price:''}" placeholder="미등록">
+      </div>
+      <div class="mini-field">
+        <label>판매가</label>
+        <input type="number" id="sale-${r.id}" value="${r.sale_price!=null?r.sale_price:''}" placeholder="미등록">
+      </div>
+      <div class="mini-field full">
+        <label>메모 (예: 택1 조건, 사용 시점 등)</label>
+        <input type="text" id="note-${r.id}" value="${escapeHtml(r.note||'')}">
+      </div>
+    </div>
+    <div class="drug-edit-actions">
+      <button class="btn btn-sm btn-primary" onclick="saveDrugRow('${r.id}','${r.drug_id}')">저장</button>
+      <button class="btn btn-sm btn-danger" onclick="deleteDrugRow('${r.id}')">삭제</button>
+    </div>
+  </div>`;
+}
+
+async function saveDrugRow(linkId, drugId){
+  const tier = document.getElementById('tier-'+linkId).value;
+  const priority = parseInt(document.getElementById('priority-'+linkId).value) || 1;
+  const note = document.getElementById('note-'+linkId).value.trim() || null;
+  const purchaseRaw = document.getElementById('purchase-'+linkId).value;
+  const saleRaw = document.getElementById('sale-'+linkId).value;
+  const purchase_price = purchaseRaw==='' ? null : parseInt(purchaseRaw);
+  const sale_price = saleRaw==='' ? null : parseInt(saleRaw);
+
+  const { error: e1 } = await sb.from('taxonomy_drugs').update({tier,priority,note}).eq('id', linkId);
+  if(e1){ toast('저장 실패: '+e1.message); return; }
+
+  const { error: e2 } = await sb.from('pharmacy_drugs')
+    .upsert({ pharmacy_id: PHARMACY_ID, drug_id: drugId, purchase_price, sale_price }, { onConflict: 'pharmacy_id,drug_id' });
+  if(e2){ toast('가격 저장 실패: '+e2.message); return; }
+
+  const link = LINKS.find(l=>l.id===linkId);
+  if(link){ link.tier=tier; link.priority=priority; link.note=note; link.purchase_price=purchase_price; link.sale_price=sale_price; }
+  rebuildIndexes();
+  toast('저장되었습니다');
+  renderTree();
+}
+
+async function deleteDrugRow(linkId){
+  if(!confirm('이 약 연결을 삭제하시겠습니까? (가격 정보는 유지됩니다)')) return;
+  const { error } = await sb.from('taxonomy_drugs').delete().eq('id', linkId);
+  if(error){ toast('삭제 실패: '+error.message); return; }
+  LINKS = LINKS.filter(l=>l.id!==linkId);
+  rebuildIndexes();
+  toast('삭제되었습니다');
+  renderTree();
+}
+
+let drugSearchTimer = null;
+async function searchDrugs(q){
+  clearTimeout(drugSearchTimer);
+  const box = document.getElementById('drugSearchResults');
+  q = q.trim();
+  if(q.length<1){ box.innerHTML=''; return; }
+  drugSearchTimer = setTimeout(async ()=>{
+    const { data, error } = await sb.from('drugs').select('id,name,company,category,status')
+      .ilike('name', '%'+q+'%').limit(15);
+    if(error){ box.innerHTML = `<div class="searchResultItem">검색 오류: ${escapeHtml(error.message)}</div>`; return; }
+    let html = '';
+    (data||[]).forEach(d=>{
+      html += `<div class="searchResultItem" onclick="addDrugToLeaf('${d.id}','${escapeHtml(d.name)}','${escapeHtml(d.company||'')}')">
+        <b>${escapeHtml(d.name)}</b><div class="sub">${escapeHtml(d.company||d.category||'')}</div>
+      </div>`;
+    });
+    html += `<div class="searchResultItem" style="border-style:dashed;color:var(--pine);font-weight:700;" onclick="openNewDrugModal('${escapeHtml(q)}')">
+      + "${escapeHtml(q)}" 목록에 없나요? 새 약으로 등록
+    </div>`;
+    box.innerHTML = html;
+  }, 300);
+}
+
+async function addDrugToLeaf(drugId, drugName, company){
+  const curId = currentPath[currentPath.length-1];
+  const existingCount = (linksByTaxonomy[curId]||[]).length;
+  const { data, error } = await sb.from('taxonomy_drugs')
+    .insert({ taxonomy_id: curId, drug_id: drugId, tier:'primary', priority: existingCount+1 })
+    .select('*, drugs(id,name,company)').single();
+  if(error){ toast('추가 실패: '+error.message); return; }
+  LINKS.push({
+    id:data.id, taxonomy_id:data.taxonomy_id, tier:data.tier, priority:data.priority, note:data.note,
+    drug_id:data.drug_id, drug_name:drugName, company:company||null, purchase_price:null, sale_price:null
+  });
+  rebuildIndexes();
+  document.getElementById('drugSearchInput').value='';
+  document.getElementById('drugSearchResults').innerHTML='';
+  toast('추가되었습니다. 가격을 입력해 주세요.');
+  renderTree();
+}
+
+function openNewDrugModal(prefillName){
+  renderModal(`
+    <div class="modal-title">새 약 등록 (검토 대기)</div>
+    <div class="field"><label>약 이름</label><input type="text" id="newDrugName" value="${escapeHtml(prefillName)}"></div>
+    <div class="field"><label>제조사 (선택)</label><input type="text" id="newDrugCompany"></div>
+    <button class="btn btn-primary" onclick="submitNewDrug()">등록하고 연결하기</button>
+    <button class="btn btn-ghost" style="margin-top:8px;width:100%;" onclick="closeModal()">취소</button>
+  `);
+}
+async function submitNewDrug(){
+  const name = document.getElementById('newDrugName').value.trim();
+  const company = document.getElementById('newDrugCompany').value.trim() || null;
+  if(!name){ toast('약 이름을 입력해 주세요'); return; }
+  const { data, error } = await sb.from('drugs')
+    .insert({ name, company, category:'일반의약품', status:'pending', submitted_by:PHARMACY_ID })
+    .select().single();
+  if(error){ toast('등록 실패: '+error.message); return; }
+  closeModal();
+  await addDrugToLeaf(data.id, data.name, data.company);
+}
+
+// ================= MODAL =================
+function renderModal(innerHtml){
+  document.getElementById('modalRoot').innerHTML = `
+    <div class="modal-overlay" onclick="if(event.target===this)closeModal()">
+      <div class="modal-sheet">${innerHtml}</div>
+    </div>
+  `;
+}
+function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
+
+// ================= INIT =================
+(async function init(){
+  const { data: { session } } = await sb.auth.getSession();
+  if(session){
+    PHARMACY_ID = session.user.id;
+    document.getElementById('loginScreen').classList.add('hidden');
+    document.getElementById('mainScreen').classList.remove('hidden');
+    await loadAll();
+  }
+})();
+document.getElementById('loginPassword').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+</script>
+</body>
+</html>
