@@ -169,6 +169,7 @@ main{ flex:1; padding:14px 16px 60px; }
       <div class="brandrow">
         <div class="brand">성빈약국<small>ON 관리자</small></div>
         <div class="hdrbtns">
+          <button class="hdrbtn hidden" id="templateBtn" onclick="doRefreshTemplate()">템플릿 갱신</button>
           <button class="hdrbtn" onclick="openPasswordModal()">비밀번호 변경</button>
           <button class="hdrbtn" onclick="doLogout()">로그아웃</button>
         </div>
@@ -273,8 +274,22 @@ async function loadAll(){
   }));
   rebuildIndexes();
   renderTree();
+  checkAdmin();
 }
 function byIdRaw(arr, id){ return arr.find(n=>n.id===id); }
+
+// ---- 관리자 전용: 템플릿 갱신 ----
+async function checkAdmin(){
+  const { data } = await sb.from('admins').select('user_id').eq('user_id', PHARMACY_ID).maybeSingle();
+  const btn = document.getElementById('templateBtn');
+  if(data && btn) btn.classList.remove('hidden');
+}
+async function doRefreshTemplate(){
+  if(!confirm('현재 내 증상 분류 구조를 신규 가입 약국용 템플릿으로 저장할까요?\n(추천약 연결은 저장되지 않습니다)')) return;
+  const { data, error } = await sb.rpc('refresh_template');
+  if(error){ toast('갱신 실패: ' + error.message); return; }
+  toast(`템플릿이 ${data}개 항목으로 갱신되었습니다`);
+}
 
 function rebuildIndexes(){
   byId = {}; NODES.forEach(n => byId[n.id]=n);
@@ -327,6 +342,21 @@ function renderTree(){
   const kids = childrenOf[curId] || [];
   const isLeaf = currentPath.length>0 && kids.length===0;
 
+  // 트리가 비어 있으면 템플릿 가져오기 안내
+  if(NODES.length === 0){
+    container.innerHTML = `
+      <div class="addDrugBox" style="text-align:center;padding:24px 16px;">
+        <div style="font-size:15px;font-weight:800;margin-bottom:8px;">아직 증상 분류가 없습니다</div>
+        <div style="font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:16px;">
+          기본 증상 분류 266개를 가져와 바로 시작할 수 있습니다.<br>
+          가져온 뒤 자유롭게 수정·삭제하고, 취급하는 제품과 가격을 채워 넣으세요.<br>
+          <span style="font-size:11.5px;">추천약은 포함되지 않습니다.</span>
+        </div>
+        <button class="btn btn-primary" style="width:auto;padding:11px 22px;" onclick="seedTaxonomy(this)">기본 분류 가져오기</button>
+      </div>`;
+    return;
+  }
+
   let html = '';
   if(currentPath.length>0){
     const node = byId[curId];
@@ -376,6 +406,20 @@ function renderTree(){
 
 function escapeHtml(s){
   return (s||'').replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ---- 기본 분류(템플릿) 가져오기 ----
+async function seedTaxonomy(btn){
+  if(btn){ btn.disabled = true; btn.textContent = '가져오는 중...'; }
+  const { data, error } = await sb.rpc('seed_my_taxonomy');
+  if(error){
+    toast('가져오기 실패: ' + error.message);
+    if(btn){ btn.disabled = false; btn.textContent = '기본 분류 가져오기'; }
+    return;
+  }
+  toast(`${data}개 항목을 가져왔습니다`);
+  currentPath = [];
+  await loadAll();
 }
 
 // ---- rename ----

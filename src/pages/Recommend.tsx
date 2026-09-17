@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { getChildren, getRecommendations, searchSymptoms } from '../api/taxonomy'
+import { getChildren, getRecommendations, myTaxonomyCount, searchSymptoms } from '../api/taxonomy'
 import SymptomInput from '../components/SymptomInput'
 import CandidateList from '../components/CandidateList'
 import BranchSelector from '../components/BranchSelector'
 import Breadcrumb from '../components/Breadcrumb'
 import ResultPanel from '../components/ResultPanel'
+import EmptyTaxonomy from '../components/EmptyTaxonomy'
 import type { Crumb, Recommendation, SearchHit, TaxonomyNode } from '../types/db'
 
 type Stage = 'input' | 'candidates' | 'branch' | 'result'
@@ -21,6 +22,7 @@ export default function Recommend() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showCost, setShowCost] = useState(false)
+  const [nodeCount, setNodeCount] = useState<number | null>(null)
 
   const fail = (e: unknown) => {
     // eslint-disable-next-line no-console
@@ -117,6 +119,12 @@ export default function Recommend() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [stage])
 
+  useEffect(() => {
+    myTaxonomyCount()
+      .then(setNodeCount)
+      .catch(() => setNodeCount(0))
+  }, [])
+
   return (
     <div className="min-h-full">
       <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/90 backdrop-blur">
@@ -135,6 +143,17 @@ export default function Recommend() {
       </header>
 
       <main className="mx-auto max-w-5xl space-y-5 px-4 py-5 lg:px-8 lg:py-8">
+        {nodeCount === 0 ? (
+          <EmptyTaxonomy
+            onSeeded={() => {
+              setNodeCount(null)
+              myTaxonomyCount()
+                .then(setNodeCount)
+                .catch(() => setNodeCount(0))
+            }}
+          />
+        ) : (
+          <>
         <SymptomInput onSearch={onSearch} loading={loading && stage === 'candidates'} />
 
         {error && (
@@ -179,6 +198,8 @@ export default function Recommend() {
           >
             증상 입력 대신 계통에서 직접 찾기 ▸
           </button>
+        )}
+          </>
         )}
       </main>
     </div>

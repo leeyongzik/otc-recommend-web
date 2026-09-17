@@ -18,3 +18,15 @@ export async function getRecommendations(nodeId: string): Promise<Recommendation
   if (error) throw error
   return (data ?? []) as Recommendation[]
 }
+
+export async function myTaxonomyCount(): Promise<number> {
+  const { data, error } = await supabase.rpc('my_taxonomy_count')
+  if (error) throw error
+  return (data ?? 0) as number
+}
+
+export async function seedMyTaxonomy(): Promise<number> {
+  const { data, error } = await supabase.rpc('seed_my_taxonomy')
+  if (error) throw error
+  return (data ?? 0) as number
+}
