@@ -32,13 +32,30 @@
   }
   .wrap{max-width:720px;margin:0 auto;padding:20px 16px 72px}
 
-  /* ── 상단 ── */
-  header{display:flex;align-items:baseline;gap:10px;margin-bottom:18px}
+  header{display:flex;align-items:baseline;gap:10px;margin-bottom:14px}
   header h1{font-size:19px;font-weight:700;letter-spacing:-.02em;margin:0}
   header .who{margin-left:auto;font-size:13px;color:var(--muted)}
   header button.link{background:none;border:0;color:var(--muted);font-size:13px;cursor:pointer;padding:4px;text-decoration:underline;font-family:inherit}
 
-  /* ── 입력 ── */
+  .mic{
+    display:flex;align-items:center;gap:12px;margin-bottom:14px;
+    background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;
+  }
+  .mic .dot{flex:none;width:11px;height:11px;border-radius:50%;background:#C6CDC9}
+  .mic.on .dot{background:#D64A3C}
+  @media (prefers-reduced-motion:no-preference){
+    .mic.on .dot{animation:pulse 1.4s ease-in-out infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+  }
+  .mic .heard{flex:1;min-width:0;font-size:16px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .mic .heard.used{color:var(--green);font-weight:600}
+  .mic button{
+    flex:none;font:inherit;font-size:15px;font-weight:600;padding:9px 16px;border-radius:10px;cursor:pointer;
+    border:1px solid var(--line);background:var(--card);color:var(--ink);
+  }
+  .mic.on button{background:var(--green);color:#fff;border-color:var(--green)}
+  .mic button:focus-visible{outline:3px solid var(--green-soft);outline-offset:2px}
+
   .ask{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px}
   .ask label{display:block;font-size:14px;color:var(--muted);margin-bottom:8px}
   .row{display:flex;gap:8px}
@@ -54,23 +71,19 @@
   button.go:disabled{opacity:.45;cursor:default}
   button.go:focus-visible,button.opt:focus-visible{outline:3px solid var(--green-soft);outline-offset:2px}
 
-  /* ── 복기 문구 ── */
   .say{
     margin:18px 0 0;background:var(--green-soft);border-radius:var(--r);
     padding:16px 18px;font-size:21px;font-weight:600;letter-spacing:-.01em;color:#0B4A36;
   }
   .say small{display:block;font-size:13px;font-weight:500;color:#3C7761;margin-bottom:5px;letter-spacing:0}
 
-  /* ── 경우 목록 ── */
   .cases{margin-top:14px;display:grid;gap:8px}
   button.opt{
     font:inherit;text-align:left;background:var(--card);border:1px solid var(--line);
     border-radius:var(--r);padding:15px 16px;font-size:19px;font-weight:600;cursor:pointer;color:var(--ink);
   }
   button.opt:hover{border-color:var(--green)}
-  button.opt span{display:block;font-size:14px;font-weight:500;color:var(--muted);margin-top:3px}
 
-  /* ── 약물 결과 ── */
   .result{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
   .result h2{margin:0;padding:14px 18px;font-size:15px;font-weight:600;color:var(--muted);border-bottom:1px solid var(--line)}
   .drug{display:flex;align-items:flex-start;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
@@ -84,7 +97,6 @@
   .drug .meta{font-size:14px;color:var(--muted);margin-top:2px}
   .drug .price{margin-left:auto;flex:none;font-size:17px;font-weight:600;color:var(--muted);white-space:nowrap}
 
-  /* ── 경로 / 안내 ── */
   .crumb{margin-top:16px;font-size:14px;color:var(--muted)}
   .crumb b{color:var(--ink);font-weight:600}
   .note{margin-top:14px;padding:14px 16px;border-radius:var(--r);background:#FCEFEC;color:var(--danger);font-size:15px}
@@ -96,7 +108,6 @@
   }
   .hidden{display:none}
 
-  /* ── 로그인 ── */
   .login{max-width:360px;margin:14vh auto;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:24px}
   .login h1{font-size:20px;margin:0 0 4px}
   .login p{margin:0 0 18px;font-size:14px;color:var(--muted)}
@@ -117,7 +128,6 @@
 </head>
 <body>
 
-<!-- 로그인 -->
 <div id="login" class="login hidden">
   <h1>상담 코치</h1>
   <p>약국 계정으로 로그인하세요.</p>
@@ -127,7 +137,6 @@
   <div id="loginErr" class="err"></div>
 </div>
 
-<!-- 본 화면 -->
 <div id="app" class="wrap hidden">
   <header>
     <h1>상담 코치</h1>
@@ -135,7 +144,12 @@
     <button class="link" id="btnLogout">로그아웃</button>
   </header>
 
-  <!-- 1단계 -->
+  <div class="mic" id="micBar">
+    <span class="dot"></span>
+    <span class="heard" id="heard">마이크가 꺼져 있습니다</span>
+    <button id="btnMic">켜기</button>
+  </div>
+
   <div id="step1" class="ask">
     <label for="u1">환자가 뭐라고 하셨나요</label>
     <div class="row">
@@ -146,7 +160,6 @@
 
   <div id="miss1" class="note hidden"></div>
 
-  <!-- 2단계 -->
   <div id="stage2" class="hidden">
     <div class="say" id="say1"></div>
     <div class="cases" id="cases"></div>
@@ -161,7 +174,6 @@
     <div id="miss2" class="note hidden"></div>
   </div>
 
-  <!-- 3단계 -->
   <div id="stage3" class="hidden">
     <div class="crumb" id="crumb"></div>
     <div class="result" id="result"></div>
@@ -202,15 +214,102 @@ $('btnLogin').onclick = async () => {
   boot();
 };
 $('pw').addEventListener('keydown', e => { if(e.key==='Enter') $('btnLogin').click(); });
-$('btnLogout').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+$('btnLogout').onclick = async () => { stopMic(); await sb.auth.signOut(); location.reload(); };
 
-/* ── 1단계: 주호소 ── */
-$('btn1').onclick = findEntry;
-$('u1').addEventListener('keydown', e => { if(e.key==='Enter') findEntry(); });
+/* ── 발화 판정 ── */
+const RE_QUESTION = /(세요|나요|어요|까요|습니까|신가요|으세요|어떠세요|어떠신가요)\s*[?？]?\s*$/;
+const RE_RECAP = /(시군요|군요|시네요|네요|이시죠|시죠|죠|습니다|입니다|드릴게요|드리겠습니다|거죠|거네요|셨군요)\s*[.!]?\s*$/;
+const IGNORE = ['네','예','아니요','아뇨','잠시만요','잠깐만요','알겠습니다','감사합니다','안녕하세요',
+                '어서오세요','또 오세요','안녕히 가세요','맞습니다','그러세요','괜찮습니다','네 알겠습니다'];
 
-async function findEntry(){
-  const text = $('u1').value.trim();
+function classify(text){
+  const t = (text||'').trim();
+  if(t.length < 3) return 'ignore';
+  const bare = t.replace(/[.!?？]/g,'').trim();
+  if(IGNORE.some(w => bare === w)) return 'ignore';
+  if(/[?？]\s*$/.test(t)) return 'question';
+  if(RE_RECAP.test(t)) return 'recap';
+  if(RE_QUESTION.test(t)) return 'question';
+  return 'ignore';
+}
+
+/* ── 음성 인식 ── */
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+let rec = null, micOn = false, speaking = false;
+
+$('btnMic').onclick = () => micOn ? stopMic() : startMic();
+
+function startMic(){
+  if(!SR){
+    setHeard('이 브라우저는 음성 인식을 지원하지 않습니다. 크롬에서 열어 주세요.', false);
+    return;
+  }
+  rec = new SR();
+  rec.lang = 'ko-KR';
+  rec.continuous = true;
+  rec.interimResults = false;
+  rec.maxAlternatives = 1;
+
+  rec.onresult = e => {
+    if(speaking) return;
+    const t = e.results[e.results.length-1][0].transcript.trim();
+    handleSpeech(t);
+  };
+  rec.onerror = e => {
+    if(e.error === 'not-allowed' || e.error === 'service-not-allowed'){
+      micOn = false; paintMic();
+      setHeard('마이크 사용이 차단돼 있습니다. 주소창 자물쇠에서 허용하세요.', false);
+    }
+  };
+  rec.onend = () => { if(micOn){ try{ rec.start(); }catch(_){} } };
+
+  micOn = true; paintMic();
+  setHeard('듣고 있습니다', false);
+  try{ rec.start(); }catch(_){}
+}
+
+function stopMic(){
+  micOn = false; paintMic();
+  if(rec){ try{ rec.stop(); }catch(_){} rec = null; }
+  setHeard('마이크가 꺼져 있습니다', false);
+  if('speechSynthesis' in window) window.speechSynthesis.cancel();
+}
+
+function paintMic(){
+  $('micBar').classList.toggle('on', micOn);
+  $('btnMic').textContent = micOn ? '끄기' : '켜기';
+}
+function setHeard(text, used){
+  const el = $('heard');
+  el.textContent = text;
+  el.classList.toggle('used', !!used);
+}
+
+function handleSpeech(text){
+  if(classify(text) !== 'recap'){ setHeard(text, false); return; }
+  setHeard(text, true);
+  if(state.entryId) pick(text); else findEntry(text);
+}
+
+/* ── 음성 안내 ── */
+function speak(text){
+  if(!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ko-KR';
+  u.rate = 1.05;
+  speaking = true;
+  u.onend = u.onerror = () => { speaking = false; };
+  window.speechSynthesis.speak(u);
+}
+
+/* ── 1단계 ── */
+$('btn1').onclick = () => findEntry($('u1').value.trim());
+$('u1').addEventListener('keydown', e => { if(e.key==='Enter') findEntry($('u1').value.trim()); });
+
+async function findEntry(text){
   if(!text) return;
+  $('u1').value = text;
   $('btn1').disabled = true;
   $('miss1').classList.add('hidden');
 
@@ -227,10 +326,11 @@ async function findEntry(){
   const hit = data[0];
   state.entryId = hit.node_id;
   state.entryLabel = hit.label;
+  const kids = hit.children || [];
 
   $('say1').innerHTML = '<small>이렇게 말씀하세요</small>' + esc(shortName(hit.label)) + '은(는) 몇 가지 종류가 있습니다';
   $('cases').innerHTML = '';
-  (hit.children || []).forEach(c => {
+  kids.forEach(c => {
     const b = document.createElement('button');
     b.className = 'opt';
     b.textContent = c.label;
@@ -242,15 +342,17 @@ async function findEntry(){
   $('stage3').classList.add('hidden');
   $('againBox').classList.remove('hidden');
   $('u2').value = '';
-  $('u2').focus();
+
+  speak(shortName(hit.label) + '. ' + kids.map(c => c.label).join(', '));
 }
 
-/* ── 2단계: 선택 ── */
+/* ── 2단계 ── */
 $('btn2').onclick = () => pick($('u2').value.trim());
 $('u2').addEventListener('keydown', e => { if(e.key==='Enter') pick($('u2').value.trim()); });
 
 async function pick(text){
   if(!text || !state.entryId) return;
+  $('u2').value = text;
   $('btn2').disabled = true;
   $('miss2').classList.add('hidden');
 
@@ -282,6 +384,8 @@ async function pick(text){
   );
   $('stage3').classList.remove('hidden');
   $('stage3').scrollIntoView({ behavior:'smooth', block:'nearest' });
+
+  speak(drugs.length ? drugs.map(d => plain(d.name)).join(', ') : '추천약이 아직 없습니다');
 }
 
 /* ── 보조 ── */
@@ -293,15 +397,18 @@ $('btnReset').onclick = () => {
   $('againBox').classList.add('hidden');
   $('miss1').classList.add('hidden');
   $('miss2').classList.add('hidden');
+  if('speechSynthesis' in window) window.speechSynthesis.cancel();
+  if(micOn) setHeard('듣고 있습니다', false);
   $('u1').focus();
 };
 
 function warn(id, html){ const el=$(id); el.innerHTML=html; el.classList.remove('hidden'); }
 function esc(s){ return String(s??'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 function shortName(label){ return label.replace(/\(.*?\)/g,'').replace(/[·].*$/,'').trim(); }
+function plain(name){ return name.replace(/\(.*?\)/g,'').trim(); }
 async function logMiss(parentId, text){
   try{ await sb.from('coach_misses').insert({ pharmacy_id: state.pharmacyId, parent_id: parentId, utterance: text }); }
-  catch(e){ /* 로그 실패는 무시 */ }
+  catch(e){ }
 }
 
 boot();
