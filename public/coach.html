@@ -37,24 +37,28 @@
   header .who{margin-left:auto;font-size:13px;color:var(--muted)}
   header button.link{background:none;border:0;color:var(--muted);font-size:13px;cursor:pointer;padding:4px;text-decoration:underline;font-family:inherit}
 
-  .mic{
-    display:flex;align-items:center;gap:12px;margin-bottom:14px;
-    background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;
+  /* 크게 누르는 말하기 버튼 */
+  .talk{
+    display:flex;align-items:center;justify-content:center;gap:10px;width:100%;
+    font:inherit;font-size:19px;font-weight:700;letter-spacing:-.01em;
+    padding:18px 16px;margin-bottom:10px;cursor:pointer;
+    border:2px solid var(--green);border-radius:var(--r);
+    background:var(--card);color:var(--green);
+    -webkit-tap-highlight-color:transparent;
   }
-  .mic .dot{flex:none;width:11px;height:11px;border-radius:50%;background:#C6CDC9}
-  .mic.on .dot{background:#D64A3C}
+  .talk.on{background:var(--green);color:#fff}
+  .talk:focus-visible{outline:3px solid var(--green-soft);outline-offset:3px}
+  .talk .dot{flex:none;width:12px;height:12px;border-radius:50%;background:currentColor;opacity:.35}
+  .talk.on .dot{opacity:1}
   @media (prefers-reduced-motion:no-preference){
-    .mic.on .dot{animation:pulse 1.4s ease-in-out infinite}
-    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+    .talk.on .dot{animation:pulse 1.2s ease-in-out infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.25}}
   }
-  .mic .heard{flex:1;min-width:0;font-size:16px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .mic .heard.used{color:var(--green);font-weight:600}
-  .mic button{
-    flex:none;font:inherit;font-size:15px;font-weight:600;padding:9px 16px;border-radius:10px;cursor:pointer;
-    border:1px solid var(--line);background:var(--card);color:var(--ink);
+  .heardline{
+    min-height:22px;margin:0 2px 14px;font-size:15px;color:var(--muted);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
   }
-  .mic.on button{background:var(--green);color:#fff;border-color:var(--green)}
-  .mic button:focus-visible{outline:3px solid var(--green-soft);outline-offset:2px}
+  .heardline.used{color:var(--green);font-weight:600}
 
   .ask{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px}
   .ask label{display:block;font-size:14px;color:var(--muted);margin-bottom:8px}
@@ -144,11 +148,11 @@
     <button class="link" id="btnLogout">로그아웃</button>
   </header>
 
-  <div class="mic" id="micBar">
+  <button class="talk" id="btnTalk">
     <span class="dot"></span>
-    <span class="heard" id="heard">마이크가 꺼져 있습니다</span>
-    <button id="btnMic">켜기</button>
-  </div>
+    <span id="talkLbl">탭하고 말씀하세요</span>
+  </button>
+  <div class="heardline" id="heard"></div>
 
   <div id="step1" class="ask">
     <label for="u1">환자가 뭐라고 하셨나요</label>
@@ -233,44 +237,70 @@ function classify(text){
   return 'ignore';
 }
 
-/* ── 음성 인식 ── */
+/* ── 음성 인식 ──
+   iOS 사파리는 인식이 끝날 때마다 사용자 조작을 다시 요구한다.
+   그래서 '한 번 탭 = 한 번 말하기'를 기본으로 두고,
+   자동 재시작이 되는 브라우저(안드로이드·PC 크롬)에서는 이어서 듣는다. */
 const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-let rec = null, micOn = false, speaking = false;
+let rec = null, listening = false, wantContinue = false, speaking = false, restartTimer = null;
 
-$('btnMic').onclick = () => micOn ? stopMic() : startMic();
+$('btnTalk').onclick = () => listening ? stopMic() : startMic();
 
-function startMic(){
-  if(!SR){
-    setHeard('이 브라우저는 음성 인식을 지원하지 않습니다. 크롬에서 열어 주세요.', false);
-    return;
-  }
-  rec = new SR();
-  rec.lang = 'ko-KR';
-  rec.continuous = true;
-  rec.interimResults = false;
-  rec.maxAlternatives = 1;
+function buildRec(){
+  const r = new SR();
+  r.lang = 'ko-KR';
+  r.continuous = true;
+  r.interimResults = false;
+  r.maxAlternatives = 1;
 
-  rec.onresult = e => {
+  r.onstart = () => {
+    listening = true;
+    if(restartTimer){ clearTimeout(restartTimer); restartTimer = null; }
+    paintMic();
+  };
+  r.onresult = e => {
     if(speaking) return;
     const t = e.results[e.results.length-1][0].transcript.trim();
     handleSpeech(t);
   };
-  rec.onerror = e => {
+  r.onerror = e => {
     if(e.error === 'not-allowed' || e.error === 'service-not-allowed'){
-      micOn = false; paintMic();
-      setHeard('마이크 사용이 차단돼 있습니다. 주소창 자물쇠에서 허용하세요.', false);
+      wantContinue = false; listening = false; paintMic();
+      setHeard('마이크 사용이 차단돼 있습니다. 설정에서 허용하세요.', false);
     }
   };
-  rec.onend = () => { if(micOn){ try{ rec.start(); }catch(_){} } };
+  r.onend = () => {
+    listening = false; paintMic();
+    if(wantContinue) tryRestart();
+  };
+  return r;
+}
 
-  unlockTTS();               // iOS: 사용자 조작 시점에 음성 출력 잠금 해제
-  micOn = true; paintMic();
-  setHeard('듣고 있습니다', false);
+function startMic(){
+  if(!SR){
+    setHeard('이 브라우저는 음성 인식을 지원하지 않습니다.', false);
+    return;
+  }
+  unlockTTS();                 // iOS: 사용자 조작 시점에 음성 출력 잠금 해제
+  if(!rec) rec = buildRec();
+  wantContinue = true;
   try{ rec.start(); }catch(_){}
+  paintMic();
+}
+
+/* 자동 재시작을 시도하고, 막히면 조용히 대기 상태로 돌아간다 */
+function tryRestart(){
+  if(!rec) return;
+  try{ rec.start(); }
+  catch(_){ wantContinue = false; paintMic(); return; }
+  if(restartTimer) clearTimeout(restartTimer);
+  restartTimer = setTimeout(() => {
+    if(!listening){ wantContinue = false; paintMic(); }
+  }, 900);
 }
 
 /* iOS 사파리는 사용자 조작 없이 음성 출력을 막는다.
-   '켜기'를 누른 순간 무음 한 번을 재생해 잠금을 푼다. */
+   버튼을 누른 순간 무음 한 번을 재생해 잠금을 푼다. */
 let ttsUnlocked = false;
 function unlockTTS(){
   if(ttsUnlocked || !('speechSynthesis' in window)) return;
@@ -283,15 +313,16 @@ function unlockTTS(){
 }
 
 function stopMic(){
-  micOn = false; paintMic();
-  if(rec){ try{ rec.stop(); }catch(_){} rec = null; }
-  setHeard('마이크가 꺼져 있습니다', false);
+  wantContinue = false;
+  if(restartTimer){ clearTimeout(restartTimer); restartTimer = null; }
+  if(rec){ try{ rec.stop(); }catch(_){} }
+  listening = false; paintMic();
   if('speechSynthesis' in window) window.speechSynthesis.cancel();
 }
 
 function paintMic(){
-  $('micBar').classList.toggle('on', micOn);
-  $('btnMic').textContent = micOn ? '끄기' : '켜기';
+  $('btnTalk').classList.toggle('on', listening);
+  $('talkLbl').textContent = listening ? '듣고 있습니다 — 탭하면 멈춤' : '탭하고 말씀하세요';
 }
 function setHeard(text, used){
   const el = $('heard');
@@ -432,7 +463,7 @@ $('btnReset').onclick = () => {
   $('miss1').classList.add('hidden');
   $('miss2').classList.add('hidden');
   if('speechSynthesis' in window) window.speechSynthesis.cancel();
-  if(micOn) setHeard('듣고 있습니다', false);
+  setHeard('', false);
   $('u1').focus();
 };
 
