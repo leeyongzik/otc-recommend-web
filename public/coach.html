@@ -103,6 +103,10 @@
 
   .crumb{margin-top:16px;font-size:14px;color:var(--muted)}
   .crumb b{color:var(--ink);font-weight:600}
+  .guessed{
+    display:inline-block;margin-left:6px;padding:2px 8px;border-radius:999px;
+    background:var(--amber-soft);color:var(--amber);font-size:12px;font-weight:600;
+  }
   .note{margin-top:14px;padding:14px 16px;border-radius:var(--r);background:#FCEFEC;color:var(--danger);font-size:15px}
   .note b{font-weight:700}
   .again{margin-top:18px}
@@ -424,7 +428,8 @@ async function findEntry(text){
   const kids = hit.children || [];
 
   const nm = shortName(hit.label);
-  $('say1').innerHTML = '<small>이렇게 말씀하세요</small>' + esc(nm) + josaEunNeun(nm) + ' 몇 가지 종류가 있습니다';
+  $('say1').innerHTML = '<small>' + (hit.guess ? '이렇게 이해했습니다 — 맞으면 이렇게 말씀하세요' : '이렇게 말씀하세요')
+    + '</small>' + esc(nm) + josaEunNeun(nm) + ' 몇 가지 종류가 있습니다';
   $('cases').innerHTML = '';
   kids.forEach(c => {
     const b = document.createElement('button');
@@ -465,7 +470,8 @@ async function pick(text){
     return;
   }
 
-  $('crumb').innerHTML = esc(state.entryLabel) + ' › <b>' + esc(r.label) + '</b>';
+  $('crumb').innerHTML = esc(state.entryLabel) + ' › <b>' + esc(r.label) + '</b>'
+    + (r.guess ? ' <span class="guessed">이렇게 이해했습니다</span>' : '');
   const drugs = r.drugs || [];
   $('result').innerHTML = '<h2>' + esc(r.label) + '</h2>' + (
     drugs.length
