@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>상담 코치 — 성빈약국</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  :root{
+    --paper:#F2F4F3;
+    --card:#FFFFFF;
+    --ink:#16201C;
+    --muted:#69736E;
+    --line:#DDE3E0;
+    --green:#0E6B4E;
+    --green-soft:#E6F1EC;
+    --amber:#8A5A12;
+    --amber-soft:#FBF1DF;
+    --danger:#8C2F24;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    font-size:17px;
+    line-height:1.55;
+    -webkit-text-size-adjust:100%;
+  }
+  .wrap{max-width:720px;margin:0 auto;padding:20px 16px 72px}
+
+  /* ── 상단 ── */
+  header{display:flex;align-items:baseline;gap:10px;margin-bottom:18px}
+  header h1{font-size:19px;font-weight:700;letter-spacing:-.02em;margin:0}
+  header .who{margin-left:auto;font-size:13px;color:var(--muted)}
+  header button.link{background:none;border:0;color:var(--muted);font-size:13px;cursor:pointer;padding:4px;text-decoration:underline;font-family:inherit}
+
+  /* ── 입력 ── */
+  .ask{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px}
+  .ask label{display:block;font-size:14px;color:var(--muted);margin-bottom:8px}
+  .row{display:flex;gap:8px}
+  input[type=text],input[type=email],input[type=password]{
+    flex:1;min-width:0;font:inherit;font-size:19px;padding:13px 14px;
+    border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink);
+  }
+  input:focus{outline:3px solid var(--green-soft);border-color:var(--green)}
+  button.go{
+    font:inherit;font-weight:600;font-size:17px;padding:13px 20px;border:0;border-radius:10px;
+    background:var(--green);color:#fff;cursor:pointer;white-space:nowrap;
+  }
+  button.go:disabled{opacity:.45;cursor:default}
+  button.go:focus-visible,button.opt:focus-visible{outline:3px solid var(--green-soft);outline-offset:2px}
+
+  /* ── 복기 문구 ── */
+  .say{
+    margin:18px 0 0;background:var(--green-soft);border-radius:var(--r);
+    padding:16px 18px;font-size:21px;font-weight:600;letter-spacing:-.01em;color:#0B4A36;
+  }
+  .say small{display:block;font-size:13px;font-weight:500;color:#3C7761;margin-bottom:5px;letter-spacing:0}
+
+  /* ── 경우 목록 ── */
+  .cases{margin-top:14px;display:grid;gap:8px}
+  button.opt{
+    font:inherit;text-align:left;background:var(--card);border:1px solid var(--line);
+    border-radius:var(--r);padding:15px 16px;font-size:19px;font-weight:600;cursor:pointer;color:var(--ink);
+  }
+  button.opt:hover{border-color:var(--green)}
+  button.opt span{display:block;font-size:14px;font-weight:500;color:var(--muted);margin-top:3px}
+
+  /* ── 약물 결과 ── */
+  .result{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+  .result h2{margin:0;padding:14px 18px;font-size:15px;font-weight:600;color:var(--muted);border-bottom:1px solid var(--line)}
+  .drug{display:flex;align-items:flex-start;gap:12px;padding:16px 18px;border-bottom:1px solid var(--line)}
+  .drug:last-child{border-bottom:0}
+  .tier{
+    flex:none;font-size:12px;font-weight:700;padding:4px 9px;border-radius:999px;margin-top:3px;
+    background:var(--green-soft);color:#0B4A36;
+  }
+  .tier.add{background:var(--amber-soft);color:var(--amber)}
+  .drug .name{font-size:21px;font-weight:700;letter-spacing:-.01em}
+  .drug .meta{font-size:14px;color:var(--muted);margin-top:2px}
+  .drug .price{margin-left:auto;flex:none;font-size:17px;font-weight:600;color:var(--muted);white-space:nowrap}
+
+  /* ── 경로 / 안내 ── */
+  .crumb{margin-top:16px;font-size:14px;color:var(--muted)}
+  .crumb b{color:var(--ink);font-weight:600}
+  .note{margin-top:14px;padding:14px 16px;border-radius:var(--r);background:#FCEFEC;color:var(--danger);font-size:15px}
+  .note b{font-weight:700}
+  .again{margin-top:18px}
+  button.reset{
+    font:inherit;font-size:15px;padding:11px 18px;border:1px solid var(--line);
+    background:var(--card);border-radius:10px;cursor:pointer;color:var(--muted);
+  }
+  .hidden{display:none}
+
+  /* ── 로그인 ── */
+  .login{max-width:360px;margin:14vh auto;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:24px}
+  .login h1{font-size:20px;margin:0 0 4px}
+  .login p{margin:0 0 18px;font-size:14px;color:var(--muted)}
+  .login input{width:100%;margin-bottom:10px;font-size:17px}
+  .login button{width:100%}
+  .err{color:var(--danger);font-size:14px;margin-top:10px}
+
+  @media (max-width:420px){
+    .row{flex-direction:column}
+    button.go{width:100%}
+    .drug .price{margin-left:0;width:100%}
+  }
+  @media (prefers-reduced-motion:no-preference){
+    .say,.cases,.result{animation:rise .16s ease-out}
+    @keyframes rise{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+  }
+</style>
+</head>
+<body>
+
+<!-- 로그인 -->
+<div id="login" class="login hidden">
+  <h1>상담 코치</h1>
+  <p>약국 계정으로 로그인하세요.</p>
+  <input id="email" type="email" placeholder="이메일" autocomplete="username">
+  <input id="pw" type="password" placeholder="비밀번호" autocomplete="current-password">
+  <button class="go" id="btnLogin">로그인</button>
+  <div id="loginErr" class="err"></div>
+</div>
+
+<!-- 본 화면 -->
+<div id="app" class="wrap hidden">
+  <header>
+    <h1>상담 코치</h1>
+    <span class="who" id="who"></span>
+    <button class="link" id="btnLogout">로그아웃</button>
+  </header>
+
+  <!-- 1단계 -->
+  <div id="step1" class="ask">
+    <label for="u1">환자가 뭐라고 하셨나요</label>
+    <div class="row">
+      <input id="u1" type="text" placeholder="머리가 아파요" autocomplete="off" autocapitalize="off">
+      <button class="go" id="btn1">찾기</button>
+    </div>
+  </div>
+
+  <div id="miss1" class="note hidden"></div>
+
+  <!-- 2단계 -->
+  <div id="stage2" class="hidden">
+    <div class="say" id="say1"></div>
+    <div class="cases" id="cases"></div>
+
+    <div class="ask" style="margin-top:14px">
+      <label for="u2">환자가 고른 대로 말씀하세요</label>
+      <div class="row">
+        <input id="u2" type="text" placeholder="체하고 나서요" autocomplete="off" autocapitalize="off">
+        <button class="go" id="btn2">약 보기</button>
+      </div>
+    </div>
+    <div id="miss2" class="note hidden"></div>
+  </div>
+
+  <!-- 3단계 -->
+  <div id="stage3" class="hidden">
+    <div class="crumb" id="crumb"></div>
+    <div class="result" id="result"></div>
+  </div>
+
+  <div class="again hidden" id="againBox">
+    <button class="reset" id="btnReset">새 손님</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+const SUPABASE_URL = 'https://letwvftkomuxxbhnswyf.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Ow_wnycgPkTubzv-sjg96w_by39lUOF';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const $ = id => document.getElementById(id);
+let state = { pharmacyId:null, entryId:null, entryLabel:null };
+
+/* ── 인증 ── */
+async function boot(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session){ show('login'); return; }
+  state.pharmacyId = session.user.id;
+  const { data } = await sb.from('pharmacies').select('name').eq('id', session.user.id).maybeSingle();
+  $('who').textContent = data?.name || session.user.email;
+  show('app');
+  $('u1').focus();
+}
+function show(which){
+  $('login').classList.toggle('hidden', which!=='login');
+  $('app').classList.toggle('hidden', which!=='app');
+}
+$('btnLogin').onclick = async () => {
+  $('loginErr').textContent = '';
+  const { error } = await sb.auth.signInWithPassword({ email:$('email').value.trim(), password:$('pw').value });
+  if(error){ $('loginErr').textContent = '로그인하지 못했습니다. 이메일과 비밀번호를 확인하세요.'; return; }
+  boot();
+};
+$('pw').addEventListener('keydown', e => { if(e.key==='Enter') $('btnLogin').click(); });
+$('btnLogout').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+
+/* ── 1단계: 주호소 ── */
+$('btn1').onclick = findEntry;
+$('u1').addEventListener('keydown', e => { if(e.key==='Enter') findEntry(); });
+
+async function findEntry(){
+  const text = $('u1').value.trim();
+  if(!text) return;
+  $('btn1').disabled = true;
+  $('miss1').classList.add('hidden');
+
+  const { data, error } = await sb.rpc('coach_start', { p_utterance: text });
+  $('btn1').disabled = false;
+
+  if(error){ warn('miss1', '조회하지 못했습니다. 다시 시도하세요.'); return; }
+  if(!data || !data.length){
+    warn('miss1', '<b>' + esc(text) + '</b> — 해당하는 증상을 찾지 못했습니다. 다른 표현으로 말씀해 보세요.');
+    logMiss(null, text);
+    return;
+  }
+
+  const hit = data[0];
+  state.entryId = hit.node_id;
+  state.entryLabel = hit.label;
+
+  $('say1').innerHTML = '<small>이렇게 말씀하세요</small>' + esc(shortName(hit.label)) + '은(는) 몇 가지 종류가 있습니다';
+  $('cases').innerHTML = '';
+  (hit.children || []).forEach(c => {
+    const b = document.createElement('button');
+    b.className = 'opt';
+    b.textContent = c.label;
+    b.onclick = () => pick(c.label);
+    $('cases').appendChild(b);
+  });
+
+  $('stage2').classList.remove('hidden');
+  $('stage3').classList.add('hidden');
+  $('againBox').classList.remove('hidden');
+  $('u2').value = '';
+  $('u2').focus();
+}
+
+/* ── 2단계: 선택 ── */
+$('btn2').onclick = () => pick($('u2').value.trim());
+$('u2').addEventListener('keydown', e => { if(e.key==='Enter') pick($('u2').value.trim()); });
+
+async function pick(text){
+  if(!text || !state.entryId) return;
+  $('btn2').disabled = true;
+  $('miss2').classList.add('hidden');
+
+  const { data, error } = await sb.rpc('coach_pick', { p_parent_id: state.entryId, p_utterance: text });
+  $('btn2').disabled = false;
+
+  if(error){ warn('miss2', '조회하지 못했습니다. 다시 시도하세요.'); return; }
+  const r = data && data[0];
+  if(!r || !r.matched){
+    warn('miss2', '<b>' + esc(text) + '</b> — 어느 쪽인지 가리지 못했습니다. 위 목록에서 눌러 주세요.');
+    logMiss(state.entryId, text);
+    return;
+  }
+
+  $('crumb').innerHTML = esc(state.entryLabel) + ' › <b>' + esc(r.label) + '</b>';
+  const drugs = r.drugs || [];
+  $('result').innerHTML = '<h2>' + esc(r.label) + '</h2>' + (
+    drugs.length
+      ? drugs.map(d => `
+        <div class="drug">
+          <span class="tier${d.tier==='add_on'?' add':''}">${d.tier==='add_on'?'함께':'기본'}</span>
+          <div>
+            <div class="name">${esc(d.name)}</div>
+            ${d.note ? '<div class="meta">'+esc(d.note)+'</div>' : ''}
+          </div>
+          ${d.sale_price ? '<div class="price">'+Number(d.sale_price).toLocaleString()+'원</div>' : ''}
+        </div>`).join('')
+      : '<div class="drug"><div><div class="name">추천약 준비 중</div></div></div>'
+  );
+  $('stage3').classList.remove('hidden');
+  $('stage3').scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+/* ── 보조 ── */
+$('btnReset').onclick = () => {
+  state = { pharmacyId: state.pharmacyId, entryId:null, entryLabel:null };
+  $('u1').value=''; $('u2').value='';
+  $('stage2').classList.add('hidden');
+  $('stage3').classList.add('hidden');
+  $('againBox').classList.add('hidden');
+  $('miss1').classList.add('hidden');
+  $('miss2').classList.add('hidden');
+  $('u1').focus();
+};
+
+function warn(id, html){ const el=$(id); el.innerHTML=html; el.classList.remove('hidden'); }
+function esc(s){ return String(s??'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function shortName(label){ return label.replace(/\(.*?\)/g,'').replace(/[·].*$/,'').trim(); }
+async function logMiss(parentId, text){
+  try{ await sb.from('coach_misses').insert({ pharmacy_id: state.pharmacyId, parent_id: parentId, utterance: text }); }
+  catch(e){ /* 로그 실패는 무시 */ }
+}
+
+boot();
+</script>
+</body>
+</html>
