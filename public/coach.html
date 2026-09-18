@@ -330,31 +330,39 @@ function setHeard(text, used){
   el.classList.toggle('used', !!used);
 }
 
+let lastSpeech = { text:'', at:0 };
 function handleSpeech(text){
+  const now = Date.now();
+  if(text === lastSpeech.text && now - lastSpeech.at < 2000) return;   // 같은 결과 중복 처리 방지
+  lastSpeech = { text, at: now };
   if(classify(text) !== 'recap'){ setHeard(text, false); return; }
   setHeard(text, true);
   if(state.entryId) pick(text); else findEntry(text);
 }
 
-/* ── 음성 안내 ── */
+/* ── 음성 안내 ──
+   안내가 '실제로 재생을 시작했을 때만' 마이크 입력을 잠시 무시한다.
+   iOS처럼 재생이 차단되는 환경에서는 잠그지 않아, 바로 다음 말을 받을 수 있다. */
 let speakGuard = null;
 function releaseSpeaking(){
   speaking = false;
   if(speakGuard){ clearTimeout(speakGuard); speakGuard = null; }
 }
 function speak(text){
-  if(!('speechSynthesis' in window)){ releaseSpeaking(); return; }
+  releaseSpeaking();
+  if(!('speechSynthesis' in window)) return;
   try{
     window.speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = 'ko-KR';
     u.rate = 1.05;
-    speaking = true;
+    u.onstart = () => {                         // 재생이 시작된 경우에만 잠금
+      speaking = true;
+      if(speakGuard) clearTimeout(speakGuard);
+      speakGuard = setTimeout(releaseSpeaking, Math.min(2000 + text.length*180, 9000));
+    };
     u.onend = u.onerror = releaseSpeaking;
     window.speechSynthesis.speak(u);
-    // 재생 완료 신호가 오지 않아도 마이크가 영영 막히지 않도록
-    if(speakGuard) clearTimeout(speakGuard);
-    speakGuard = setTimeout(releaseSpeaking, Math.min(3000 + text.length*180, 9000));
   }catch(_){ releaseSpeaking(); }
 }
 
@@ -407,6 +415,8 @@ async function findEntry(text){
   $('stage3').classList.add('hidden');
   $('againBox').classList.remove('hidden');
   $('u2').value = '';
+  $('stage2').scrollIntoView({ behavior:'smooth', block:'nearest' });
+  if(!listening) $('u2').focus();     // 음성 대기 중이면 키보드를 띄우지 않는다
 
   speak(nm + '. ' + kids.map(c => c.label).join(', '));
 }
