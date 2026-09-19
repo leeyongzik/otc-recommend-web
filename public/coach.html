@@ -116,6 +116,28 @@
   }
   .hidden{display:none}
 
+  /* v8 — ③④⑦⑧ */
+  .hint{margin-top:10px;font-size:14px;color:var(--muted)}
+  .hint b{color:var(--ink);font-weight:600}
+  .alts{margin-top:10px;background:var(--card);border:1px dashed var(--line);border-radius:var(--r);overflow:hidden}
+  .alts h3{margin:0;padding:12px 18px;font-size:14px;font-weight:600;color:var(--muted);border-bottom:1px dashed var(--line)}
+  .alt{display:flex;align-items:baseline;gap:10px;padding:12px 18px;border-bottom:1px dashed var(--line);font-size:16px}
+  .alt:last-child{border-bottom:0}
+  .alt .when{color:var(--muted);flex:none;max-width:48%}
+  .alt .aname{font-weight:700}
+  .alt .aprice{margin-left:auto;flex:none;color:var(--muted);font-size:15px;white-space:nowrap}
+  .guide{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 18px}
+  .guide small{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+  .guide p{margin:0;font-size:18px;line-height:1.6}
+  .redflag{margin-top:10px;padding:14px 16px;border-radius:var(--r);background:#FCEFEC;color:var(--danger);font-size:16px;line-height:1.6}
+  .redflag small{display:block;font-size:13px;font-weight:600;margin-bottom:4px}
+  button.listen{
+    margin-top:12px;width:100%;font:inherit;font-size:17px;font-weight:600;padding:13px 16px;
+    border:1px solid var(--green);border-radius:10px;background:var(--card);color:var(--green);cursor:pointer;
+  }
+  button.listen:focus-visible{outline:3px solid var(--green-soft);outline-offset:2px}
+  @media (max-width:420px){ .alt{flex-wrap:wrap} .alt .when{max-width:100%;width:100%} .alt .aprice{margin-left:0} }
+
   .login{max-width:360px;margin:14vh auto;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:24px}
   .login h1{font-size:20px;margin:0 0 4px}
   .login p{margin:0 0 18px;font-size:14px;color:var(--muted)}
@@ -123,10 +145,12 @@
   .login button{width:100%}
   .err{color:var(--danger);font-size:14px;margin-top:10px}
 
+  .drug > div:not(.price){flex:1;min-width:0}
   @media (max-width:420px){
     .row{flex-direction:column}
     button.go{width:100%}
-    .drug .price{margin-left:0;width:100%}
+    .drug{flex-wrap:wrap}
+    .drug .price{margin-left:auto}
   }
   @media (prefers-reduced-motion:no-preference){
     .say,.cases,.result{animation:rise .16s ease-out}
@@ -173,7 +197,7 @@
     <div class="cases" id="cases"></div>
 
     <div class="ask" style="margin-top:14px">
-      <label for="u2">환자가 고른 대로 말씀하세요</label>
+      <label for="u2" id="u2lbl">환자 답을 복기하세요</label>
       <div class="row">
         <input id="u2" type="text" placeholder="체하고 나서요" autocomplete="off" autocapitalize="off">
         <button class="go" id="btn2">약 보기</button>
@@ -185,6 +209,8 @@
   <div id="stage3" class="hidden">
     <div class="crumb" id="crumb"></div>
     <div class="result" id="result"></div>
+    <div class="alts hidden" id="alts"></div>
+    <div class="guide hidden" id="guide"></div>
   </div>
 
   <div class="again hidden" id="againBox">
@@ -199,7 +225,7 @@ const SUPABASE_KEY = 'sb_publishable_Ow_wnycgPkTubzv-sjg96w_by39lUOF';
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const $ = id => document.getElementById(id);
-let state = { pharmacyId:null, entryId:null, entryLabel:null };
+let state = { pharmacyId:null, entryId:null, entryLabel:null, entryGuide:'', guideText:'' };
 
 /* ── 인증 ── */
 async function boot(){
@@ -226,7 +252,8 @@ $('btnLogout').onclick = async () => { stopMic(); await sb.auth.signOut(); locat
 
 /* ── 발화 판정 ── */
 const RE_QUESTION = /(세요|나요|어요|까요|습니까|신가요|으세요|어떠세요|어떠신가요)\s*[?？]?\s*$/;
-const RE_RECAP = /(시군요|군요|시네요|네요|이시죠|시죠|죠|습니다|입니다|드릴게요|드리겠습니다|거죠|거네요|셨군요)\s*[.!]?\s*$/;
+/* v8: 복기는 "~거죠?"처럼 물음표가 붙어도 복기로 본다 */
+const RE_RECAP = /(시군요|군요|시네요|네요|이시죠|시죠|죠|습니다|입니다|드릴게요|드리겠습니다|거죠|거네요|셨군요)\s*[.!?？]?\s*$/;
 const IGNORE = ['네','예','아니요','아뇨','잠시만요','잠깐만요','알겠습니다','감사합니다','안녕하세요',
                 '어서오세요','또 오세요','안녕히 가세요','맞습니다','그러세요','괜찮습니다','네 알겠습니다'];
 
@@ -235,8 +262,8 @@ function classify(text){
   if(t.length < 3) return 'ignore';
   const bare = t.replace(/[.!?？]/g,'').trim();
   if(IGNORE.some(w => bare === w)) return 'ignore';
+  if(RE_RECAP.test(t)) return 'recap';          // 복기 어미가 먼저
   if(/[?？]\s*$/.test(t)) return 'question';
-  if(RE_RECAP.test(t)) return 'recap';
   if(RE_QUESTION.test(t)) return 'question';
   return 'ignore';
 }
@@ -427,9 +454,15 @@ async function findEntry(text){
   state.entryLabel = hit.label;
   const kids = hit.children || [];
 
+  // v8: 주호소 노드의 ③음성·④질문·⑧적색기 문장
+  const node = await fetchNode(hit.node_id);
+  state.entryGuide = node.guide_text || '';
+
   const nm = shortName(hit.label);
-  $('say1').innerHTML = '<small>' + (hit.guess ? '이렇게 이해했습니다 — 맞으면 이렇게 말씀하세요' : '이렇게 말씀하세요')
-    + '</small>' + esc(nm) + josaEunNeun(nm) + ' 몇 가지 종류가 있습니다';
+  const askText = node.ask_text
+    || kids.map(c => c.label).join('? ') + '?';
+  $('say1').innerHTML = '<small>' + (hit.guess ? '「' + esc(nm) + '」로 이해했습니다 — 맞으면 이렇게 물어보세요' : '이렇게 물어보세요')
+    + '</small>' + esc(askText);
   $('cases').innerHTML = '';
   kids.forEach(c => {
     const b = document.createElement('button');
@@ -443,10 +476,26 @@ async function findEntry(text){
   $('stage3').classList.add('hidden');
   $('againBox').classList.remove('hidden');
   $('u2').value = '';
+  $('u2').placeholder = kids.map(c => c.label).join(' / ');
+  $('u2lbl').innerHTML = '환자 답을 복기하세요 — 끝을 <b>「~거죠」「~군요」</b>로';
   $('stage2').scrollIntoView({ behavior:'smooth', block:'nearest' });
   if(!listening) $('u2').focus();     // 음성 대기 중이면 키보드를 띄우지 않는다
 
-  speak(nm + '. ' + kids.map(c => c.label).join(', '));
+  // ③ 앱 음성
+  speak(node.say_text || (nm + '. ' + kids.map(c => c.label).join(', ') + '. ' + kids.length + '가지입니다.'));
+}
+
+async function fetchNode(id){
+  try{
+    const { data } = await sb.rpc('coach_node', { p_node_id: id });
+    return data || {};
+  }catch(_){ return {}; }
+}
+async function fetchAlts(id){
+  try{
+    const { data } = await sb.rpc('coach_alts', { p_node_id: id });
+    return Array.isArray(data) ? data : [];
+  }catch(_){ return []; }
 }
 
 /* ── 2단계 ── */
@@ -486,15 +535,47 @@ async function pick(text){
         </div>`).join('')
       : '<div class="drug"><div><div class="name">추천약 준비 중</div></div></div>'
   );
+  // v8: 분기 문장(⑦⑧) + 대안
+  const [node, alts] = await Promise.all([fetchNode(r.node_id), fetchAlts(r.node_id)]);
+
+  if(alts.length){
+    $('alts').innerHTML = '<h3>상황에 따라</h3>' + alts.map(a => `
+      <div class="alt">
+        <span class="when">${esc(a.alt_when || '')}</span>
+        <span class="aname">${esc(plain(a.name))}</span>
+        ${a.sale_price ? '<span class="aprice">'+Number(a.sale_price).toLocaleString()+'원</span>' : ''}
+      </div>`).join('');
+    $('alts').classList.remove('hidden');
+  } else {
+    $('alts').classList.add('hidden');
+  }
+
+  const g = node.guide_text || '';
+  const red = state.entryGuide || '';
+  state.guideText = [g, red].filter(Boolean).join(' ');
+  if(g || red){
+    $('guide').innerHTML = '<small>⑧ 복약지도 — 환자에게 이렇게 말씀하세요</small>'
+      + (g ? '<p>' + esc(g) + '</p>' : '')
+      + (red ? '<div class="redflag"><small>이럴 땐 병원으로</small>' + esc(red) + '</div>' : '')
+      + '<button class="listen" id="btnGuide">복약지도 듣기</button>';
+    $('guide').classList.remove('hidden');
+    $('btnGuide').onclick = () => { unlockTTS(); speak(state.guideText); };
+  } else {
+    $('guide').classList.add('hidden');
+  }
+
   $('stage3').classList.remove('hidden');
   $('stage3').scrollIntoView({ behavior:'smooth', block:'nearest' });
 
-  speak(drugs.length ? drugs.map(d => plain(d.name)).join(', ') : '추천약이 아직 없습니다');
+  // ⑦ 앱 음성
+  speak(node.say_text || (drugs.length ? drugs.map(d => plain(d.name)).join(', ') : '추천약이 아직 없습니다'));
 }
 
 /* ── 보조 ── */
 $('btnReset').onclick = () => {
-  state = { pharmacyId: state.pharmacyId, entryId:null, entryLabel:null };
+  state = { pharmacyId: state.pharmacyId, entryId:null, entryLabel:null, entryGuide:'', guideText:'' };
+  $('alts').classList.add('hidden');
+  $('guide').classList.add('hidden');
   $('u1').value=''; $('u2').value='';
   $('stage2').classList.add('hidden');
   $('stage3').classList.add('hidden');
