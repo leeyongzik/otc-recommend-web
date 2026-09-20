@@ -422,6 +422,8 @@ function renderTree(){
 
   if(currentPath.length>0 && isCoachNode(curId) && byId[curId].label !== COACH_ROOT){
     html += coachPanelHtml(byId[curId], kids);
+  } else if(currentPath.length>0 && !isCoachNode(curId)){
+    html += coachLinkHtml(byId[curId]);
   }
 
   if(isLeaf){
@@ -444,6 +446,7 @@ function renderTree(){
     html += `<div class="node-row" id="row-${k.id}">
       <span class="label" onclick="goTo('${k.id}')">${escapeHtml(k.label)}</span>
       ${k.suggest_referral ? '<span class="refbadge">병원권유</span>' : ''}
+      ${k.coach_link && byId[k.coach_link] ? `<span class="refbadge" style="color:#1D4E89;background:#E8EFF8">상담 흐름: ${escapeHtml(byId[k.coach_link].label)}</span>` : ''}
       <button class="miniicon" title="이름변경" onclick="startRename('${k.id}')">&#9998;</button>
       <button class="miniicon" title="이동" onclick="openMoveModal('${k.id}')">&#128257;</button>
       <button class="miniicon on" title="삭제" onclick="deleteNode('${k.id}')">&#128465;</button>
@@ -832,6 +835,34 @@ async function saveCoachText(id){
   if(error){ toast('저장하지 못했습니다: ' + error.message); return; }
   Object.assign(node, upd);
   toast('코치 문장을 저장했습니다');
+}
+
+// 기존 분류 노드 → 상담 흐름(코치 주호소) 연결: 연결하면 상담 화면에서 이 항목 대신 위쪽 상담 흐름을 보여 줌
+function coachEntries(){
+  const root = NODES.find(n => !n.parent_id && n.label === COACH_ROOT);
+  return root ? (childrenOf[root.id] || []) : [];
+}
+function coachLinkHtml(node){
+  const entries = coachEntries();
+  if(!entries.length) return '';
+  return `<div class="coach-panel" style="border-left-color:var(--ink-soft)">
+    <div style="font-size:12.5px;font-weight:700;margin-bottom:6px">상담 흐름 연결</div>
+    <div class="hint" style="margin-top:0">같은 증상이 상담 흐름에 있으면 연결하세요. 상담 화면에서 이 항목(과 아래 항목) 대신 위쪽 상담 흐름으로 안내해, 같은 증상에 답이 하나만 보입니다. 여기 연결된 약은 지우지 않고 남겨 둡니다.</div>
+    <div class="cat-row">
+      <select id="coachLinkSel">
+        <option value="">연결 안 함 — 이 항목을 그대로 보여 줌</option>
+        ${entries.map(e => `<option value="${e.id}" ${node.coach_link===e.id?'selected':''}>${escapeHtml(e.label)}</option>`).join('')}
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="saveCoachLink('${node.id}')">저장</button>
+    </div>
+  </div>`;
+}
+async function saveCoachLink(id){
+  const v = document.getElementById('coachLinkSel').value || null;
+  const { error } = await sb.from('pharmacy_taxonomy').update({ coach_link:v }).eq('id', id);
+  if(error){ toast('저장하지 못했습니다: ' + error.message); return; }
+  byId[id].coach_link = v;
+  toast(v ? '상담 흐름에 연결했습니다' : '연결을 풀었습니다');
 }
 
 // ================= 약 목록 · 세트 (DB 직접 편집) =================

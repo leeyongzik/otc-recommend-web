@@ -115,6 +115,28 @@
   .money .cost{color:var(--muted)}
   .money .pf{color:var(--green);font-weight:600}
 
+  /* ── 아래쪽 탭 · 증상 트리 ── */
+  .btabs{display:flex;gap:4px;background:#E4E9E6;border-radius:11px;padding:3px}
+  .btab{border:0;background:transparent;border-radius:9px;padding:6px 16px;font-size:15px;font-weight:700;color:var(--muted);cursor:pointer}
+  .btab.on{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:4px 0 10px;font-size:14px}
+  .crumbs button{border:0;background:none;padding:2px 4px;font-size:14px;color:var(--muted);cursor:pointer}
+  .crumbs button.cur{color:var(--ink);font-weight:700}
+  .crumbs .sep{color:#B5BDB9}
+  .tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin-bottom:12px}
+  .tnode{text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:15.5px;font-weight:600;cursor:pointer;line-height:1.4}
+  .tnode:hover{border-color:var(--green)}
+  .tnode small{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-top:2px}
+  .tnode.coach{border-style:dashed;border-color:#9DB6D6;background:var(--blue-soft)}
+  .tnode.coach small{color:var(--blue);font-weight:600}
+  .tnode .ref{display:inline-block;font-size:11px;font-weight:700;color:var(--danger);background:var(--danger-soft);border-radius:6px;padding:0 6px;margin-left:4px;vertical-align:middle}
+  .thit{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 13px;margin-bottom:6px;font-size:15px;cursor:pointer}
+  .thit:hover{border-color:var(--green)}
+  .thit small{color:var(--muted);font-size:12.5px}
+  .tsub{font-size:13px;font-weight:600;color:var(--muted);margin:14px 0 8px}
+  .tier-badge{flex:none;font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;background:var(--green-soft);color:var(--green-ink)}
+  .tier-badge.add{background:var(--amber-soft);color:var(--amber)}
+
   /* ── 로그인 ── */
   .login{max-width:360px;margin:14vh auto;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:24px}
   .login h1{font-size:20px;margin:0 0 4px}.login p{margin:0 0 16px;font-size:14px;color:var(--muted)}
@@ -166,10 +188,20 @@
     </section>
 
     <div class="listhead">
-      <h3>약 목록</h3>
+      <div class="btabs" role="tablist">
+        <button class="btab on" data-b="tree" role="tab">증상 트리</button>
+        <button class="btab" data-b="drugs" role="tab">약 목록</button>
+      </div>
       <span id="scope" class="scope hidden"><span id="scopeTxt"></span><button id="scopeX" aria-label="범위 해제">×</button></span>
       <span class="count" id="count"></span>
     </div>
+
+    <div id="treeBox">
+      <div class="crumbs" id="crumbs"></div>
+      <div id="treeBody"></div>
+    </div>
+
+    <div id="drugBox" class="hidden">
     <div class="chips" id="sysChips"></div>
     <div class="tools">
       <select id="fBrand">
@@ -186,6 +218,7 @@
       <span class="note" id="dataInfo"></span>
     </div>
     <div class="grid" id="grid"></div>
+    </div>
   </main>
 </div>
 
@@ -213,6 +246,11 @@ const db = {
   async pick(parent, label){ const { data } = await sb.rpc('coach_pick', { p_parent_id:parent, p_utterance:label }); return data && data[0]; },
   async node(id){ const { data } = await sb.rpc('coach_node', { p_node_id:id }); return data || {}; },
   async alts(id){ const { data } = await sb.rpc('coach_alts', { p_node_id:id }); return Array.isArray(data) ? data : []; },
+  async tree(){
+    const { data, error } = await sb.rpc('counter_tree');
+    if(error) throw error;
+    return data || { nodes:[], links:[] };
+  },
   async catalog(){
     const { data, error } = await sb.rpc('counter_catalog');
     if(error) throw error;
@@ -261,7 +299,8 @@ const ENTRY_TO_DIS = {
 /* ── [상태] ── */
 const S = {
   pharmacyId:null, entries:[], entry:null, entryNode:{}, kids:[], kid:null,
-  showCost:false, sys:'', brand:'', sort:'p', text:'', scopeDis:null
+  showCost:false, sys:'', brand:'', sort:'p', text:'', scopeDis:null,
+  btab:'tree', tpath:[], tq:''          // 아래쪽 탭 · 증상 트리 경로 · 트리 검색어
 };
 
 /* ── 인증 ── */
@@ -275,14 +314,14 @@ async function boot(){
   show('app');
   S.entries = await db.entries();
   renderEntries();
-  await loadCatalog();
+  await Promise.all([loadCatalog(), loadTree()]);
   $('q').focus();
 }
 async function loadCatalog(){
   $('grid').innerHTML = '<div class="empty">약 목록을 불러오는 중…</div>';
   try{ Data.load(await db.catalog()); }
   catch(err){ Data.load({}); Data.info = '약 목록을 불러오지 못했습니다 — 목록 새로고침을 눌러 주세요'; }
-  renderList();
+  renderList(); renderTreeBox();
 }
 function show(w){ $('login').classList.toggle('hidden', w!=='login'); $('app').classList.toggle('hidden', w!=='app'); }
 $('btnLogin').onclick = async () => {
@@ -314,8 +353,16 @@ $('searchForm').onsubmit = async ev => {
     S.text = '';                                   // 주호소로 잡히면 목록은 질환 범위로
   } else {
     db.miss(null, t);
-    resetConsult(`<b>${esc(t)}</b> — 상담 흐름에 없는 증상입니다. 아래 <b>약 목록</b>에서 찾아보세요.`);
     S.scopeDis = null;
+    const hits = Tree.search(t);
+    if(hits.length){
+      resetConsult(`<b>${esc(t)}</b> — 상담 흐름에 없는 증상입니다. 아래 <b>증상 트리</b>에서 골라 보세요.`);
+      S.tq = t; S.text = ''; setBtab('tree');
+    } else {
+      resetConsult(`<b>${esc(t)}</b> — 상담 흐름에도 증상 트리에도 없습니다. 아래 <b>약 목록</b>에서 찾아보세요.`);
+      S.tq = ''; setBtab('drugs');
+    }
+    $('treeBox').scrollIntoView({ behavior:'smooth', block:'start' });
   }
   renderList();
 };
@@ -401,6 +448,111 @@ function resetConsult(msg){
   $('recBody').innerHTML = '<div class="empty">경우를 고르면 추천약과 복약지도가 여기에 나옵니다.</div>';
 }
 
+/* ── [데이터] 증상 트리 (코치 트리 밖의 기존 분류) ── */
+const Tree = {
+  nodes:{}, kids:{}, links:{},
+  load(obj){
+    this.nodes = {}; this.kids = {}; this.links = {};
+    (obj.nodes || []).forEach(n => { this.nodes[n.id] = n; (this.kids[n.parent_id || ''] = this.kids[n.parent_id || ''] || []).push(n); });
+    (obj.links || []).forEach(l => (this.links[l.node] = this.links[l.node] || []).push(l));
+  },
+  children(id){ return this.kids[id || ''] || []; },
+  path(id){ const out = []; let n = this.nodes[id], g = 0; while(n && g++ < 20){ out.unshift(n); n = this.nodes[n.parent_id]; } return out; },
+  hidden(id){ return this.path(id).some(n => n.coach_link); },          // 코치로 넘긴 항목 아래는 보이지 않음
+  search(text){
+    const words = text.toLowerCase().split(/\s+/).filter(w => w.length >= 1);
+    if(!words.length) return [];
+    return Object.values(this.nodes).filter(n => {
+      if(this.hidden(n.parent_id)) return false;
+      const drugs = n.coach_link ? [] : (this.links[n.id] || []).map(l => l.name);
+      const h = [n.label, ...(n.synonyms || []), ...drugs].join(' ').toLowerCase();
+      return words.some(w => h.includes(w));
+    }).slice(0, 30);
+  }
+};
+async function loadTree(){
+  try{ Tree.load(await db.tree()); }catch(_){ Tree.load({}); }
+  renderTreeBox();
+}
+
+function setBtab(b){
+  S.btab = b;
+  document.querySelectorAll('.btab').forEach(x => x.classList.toggle('on', x.dataset.b === b));
+  $('treeBox').classList.toggle('hidden', b !== 'tree');
+  $('drugBox').classList.toggle('hidden', b !== 'drugs');
+  if(b === 'tree') renderTreeBox(); else renderList();
+}
+document.querySelectorAll('.btab').forEach(x => x.onclick = () => setBtab(x.dataset.b));
+
+function goCoach(entryId){
+  const e = S.entries.find(x => x.id === entryId);
+  if(!e) return;
+  chooseEntry(e);
+  window.scrollTo({ top:0, behavior:'smooth' });
+}
+function goNode(id){
+  S.tq = '';
+  const n = Tree.nodes[id];
+  if(n && n.coach_link){ goCoach(n.coach_link); return; }
+  S.tpath = id ? Tree.path(id).map(x => x.id) : [];
+  renderTreeBox();
+}
+
+function renderTreeBox(){
+  if(S.btab !== 'tree') return;
+  $('scope').classList.add('hidden');
+  const cur = S.tpath[S.tpath.length - 1] || null;
+
+  // 경로
+  const crumbs = [`<button class="${cur ? '' : 'cur'}" data-id="">전체</button>`]
+    .concat(S.tpath.map((id, i) => `<span class="sep">›</span><button class="${i === S.tpath.length - 1 ? 'cur' : ''}" data-id="${id}">${esc(Tree.nodes[id].label)}</button>`));
+  $('crumbs').innerHTML = S.tq ? `<button data-id="">전체</button><span class="sep">›</span><button class="cur">「${esc(S.tq)}」 찾기</button>` : crumbs.join('');
+  $('crumbs').querySelectorAll('button[data-id]').forEach(b => b.onclick = () => goNode(b.dataset.id || null));
+
+  // 검색 결과
+  if(S.tq){
+    const hits = Tree.search(S.tq);
+    $('count').textContent = hits.length + '개 항목';
+    $('treeBody').innerHTML = hits.map(n => {
+      const path = Tree.path(n.id).map(x => x.label).join(' › ');
+      return `<button class="thit" data-id="${n.id}">${esc(path)}${n.coach_link ? ' <small>— 위 상담 흐름으로</small>' : ''}</button>`;
+    }).join('') || '<div class="empty">찾는 증상이 없습니다.</div>';
+    $('treeBody').querySelectorAll('.thit').forEach(b => b.onclick = () => goNode(b.dataset.id));
+    return;
+  }
+
+  const kids = Tree.children(cur);
+  const links = cur ? (Tree.links[cur] || []) : [];
+  $('count').textContent = cur ? (kids.length ? kids.length + '개 항목' : links.length + '개 약') : kids.length + '개 계통';
+
+  const nodeBtn = n => {
+    if(n.coach_link){
+      const e = S.entries.find(x => x.id === n.coach_link);
+      return `<button class="tnode coach" data-id="${n.id}">${esc(n.label)}<small>상담 흐름 있음 → 위에서 보기${e ? ' (' + esc(e.label) + ')' : ''}</small></button>`;
+    }
+    const sub = Tree.children(n.id).length, dn = (Tree.links[n.id] || []).length;
+    return `<button class="tnode" data-id="${n.id}">${esc(n.label)}${n.referral ? '<span class="ref">병원 권유</span>' : ''}
+      <small>${sub ? sub + '개 항목' : dn ? '약 ' + dn + '개' : '약 없음'}</small></button>`;
+  };
+  let h = kids.length ? `<div class="tgrid">${kids.map(nodeBtn).join('')}</div>` : '';
+  if(cur && Tree.nodes[cur].referral) h += `<div class="red"><b>병원 권유</b>증상이 오래가거나 심하면 진료를 먼저 권하세요.</div>`;
+  if(links.length){
+    h += (kids.length ? '<div class="tsub">이 항목의 추천약</div>' : '') +
+         `<div class="grid">${links.map(l => {
+            const it = Data.byId && Data.byId.get(l.drug_id);   // 트리 약은 id로만 연결 (이름 추측 안 함)
+            const tier = `<span class="tier-badge${l.tier === 'add_on' ? ' add' : ''}">${l.tier === 'add_on' ? '함께·대안' : '기본'}</span>`;
+            if(it) return card(it, tier, l.note);
+            return `<article class="card"><div class="h"><div class="n">${esc(plain(l.name))}</div>${tier}</div>
+              ${l.note ? `<div class="kv">${esc(l.note)}</div>` : ''}
+              <div class="tags">약 목록에 없음 — 관리자 화면 「약 목록」에서 추가하면 가격·권매사유가 붙습니다</div></article>`;
+          }).join('')}</div>`;
+  } else if(cur && !kids.length){
+    h += '<div class="empty">이 항목에 연결된 약이 없습니다.</div>';
+  }
+  $('treeBody').innerHTML = h;
+  $('treeBody').querySelectorAll('.tnode').forEach(b => b.onclick = () => goNode(b.dataset.id));
+}
+
 /* ── [화면] 약 목록 ── */
 const SYS = ['진통·해열','감기·호흡기','소화기','피부','구강','안과','신경·기타','여성·비뇨기','의약외품·의료용품'];
 const OTHER = '미분류';
@@ -414,6 +566,7 @@ function hay(it){
   return [it.name,it.ing,it.eff,it.dis,it.sys,it.short,it.tag,it.maker,...it.reasons.map(r=>r.raw)].join(' ').toLowerCase();
 }
 function renderList(){
+  if(S.btab !== 'drugs') return;
   renderSysChips();
   let xs = Data.items;
   if(S.scopeDis){ xs = xs.filter(i => S.scopeDis.includes(i.dis)); }
@@ -438,7 +591,7 @@ function renderList(){
 
   $('grid').innerHTML = xs.map(card).join('') || '<div class="empty">조건에 맞는 약이 없습니다.</div>';
 }
-function card(it){
+function card(it, tierBadge, linkNote){
   const rs = it.reasons.map(r =>
     `<li><span class="p">${r.p}</span><span>${esc(r.sym)}${r.cond ? ` <span class="c">${esc(r.cond)}</span>` : ''}</span></li>`).join('');
   const pf = (it.price != null && it.cost != null) ? it.price - it.cost : it.profit;
@@ -447,7 +600,8 @@ function card(it){
     <div class="h"><div class="n">${esc(it.name)}</div>
       ${it.brand==='O' ? '<span class="badge b-o">지명</span>' : ''}
       ${it.tag ? `<span class="badge b-set">${esc(it.tag)}</span>` : ''}
-      ${it.reasons.length && it.top <= 1 ? '<span class="badge b-top">1순위</span>' : ''}</div>
+      ${it.reasons.length && it.top <= 1 ? '<span class="badge b-top">1순위</span>' : ''}${tierBadge || ''}</div>
+    ${linkNote ? `<div class="kv" style="color:var(--muted)">${esc(linkNote)}</div>` : ''}
     ${it.short ? `<span class="sh" style="display:inline-block;margin-top:4px;font-size:13px;color:var(--green-ink);background:var(--green-soft);border-radius:6px;padding:1px 7px">${esc(it.short)}</span>` : ''}
     ${rs ? `<ul class="rs">${rs}</ul>` : ''}
     <div class="tags">${it.sys ? esc(it.sys) + ' · ' + esc(it.dis) : '미분류 (관리자 화면에서 계통을 정해 주세요)'}${it.status==='pending' ? ' · 약국 전용 품목' : ''}${it.maker ? ' · ' + esc(it.maker) : ''}</div>
@@ -464,7 +618,7 @@ $('btnCost').onclick = () => {
   S.showCost = !S.showCost;
   $('btnCost').classList.toggle('on', S.showCost);
   $('btnCost').setAttribute('aria-pressed', S.showCost);
-  renderList();
+  renderList(); renderTreeBox();
   if(S.kid) chooseCase(S.kids.indexOf(S.kid));
 };
 
@@ -475,12 +629,12 @@ document.addEventListener('keydown', e => {
     return;
   }
   if(/^[1-3]$/.test(e.key) && S.kids.length) chooseCase(+e.key - 1);
-  if(e.key === 'Escape'){ resetConsult('위에서 <b>증상</b>을 고르거나, 환자가 한 말을 입력하세요.'); S.scopeDis=null; S.text=''; $('q').value=''; renderList(); $('q').focus(); }
+  if(e.key === 'Escape'){ resetConsult('위에서 <b>증상</b>을 고르거나, 환자가 한 말을 입력하세요.'); S.scopeDis=null; S.text=''; S.tq=''; S.tpath=[]; $('q').value=''; renderList(); renderTreeBox(); $('q').focus(); }
   if(e.key === '/'){ e.preventDefault(); $('q').focus(); $('q').select(); }
 });
 
 /* ── 목록 새로고침 (관리자 화면에서 고친 뒤) ── */
-$('btnReload').onclick = async () => { await loadCatalog(); toast('약 목록을 새로 불러왔습니다.'); };
+$('btnReload').onclick = async () => { await Promise.all([loadCatalog(), loadTree()]); toast('약 목록과 증상 트리를 새로 불러왔습니다.'); };
 
 /* ── 보조 ── */
 function esc(s){ return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
