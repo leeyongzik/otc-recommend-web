@@ -179,7 +179,7 @@
     <section class="consult">
       <div class="panel" id="pAsk">
         <h2>① 물어볼 말</h2>
-        <div id="askBody" class="empty">위에서 <b>증상</b>을 고르거나, 환자가 한 말을 입력하세요.<br>숫자키 <b>1~3</b>으로 경우를 고를 수 있습니다.</div>
+        <div id="askBody" class="empty">위에서 <b>증상</b>을 고르거나, 환자가 한 말을 입력하세요.<br>숫자키 <b>1~9</b>로 경우를 고를 수 있습니다.</div>
       </div>
       <div class="panel" id="pRec">
         <h2>② 추천 · 복약지도</h2>
@@ -373,7 +373,7 @@ async function chooseEntry(e, guessed){
   renderEntries();
   $('askBody').innerHTML = '<div class="empty">불러오는 중…</div>';
   const [node, kids] = await Promise.all([db.node(e.id), db.children(e.id)]);
-  S.entryNode = node; S.kids = kids.slice(0,3);
+  S.entryNode = node; S.kids = kids.slice(0,9);          // 관리자에서 늘린 경우까지 모두 (숫자키 1~9)
   S.scopeDis = ENTRY_TO_DIS[e.label] || null;
   renderAsk(guessed);
   $('recBody').innerHTML = '<div class="empty">환자 답에 맞는 경우를 고르세요.</div>';
@@ -383,10 +383,14 @@ async function chooseEntry(e, guessed){
 function renderAsk(guessed){
   const n = S.entryNode, kids = S.kids;
   const ask = n.ask_text || kids.map(k => k.label).join('? ') + '?';
+  // 관리자에서 경우를 바꿨는데 ③④ 문장은 그대로인 경우 알려 줌
+  const said = (n.say_text || '') + ' ' + (n.ask_text || '');
+  const unsaid = n.say_text ? kids.filter(k => !said.includes(k.label)).map(k => k.label) : [];
   $('askBody').innerHTML =
     `<div class="ask"><small>${guessed ? '「'+esc(S.entry.label)+'」로 이해했습니다 — ' : ''}이렇게 물어보세요</small>${esc(ask)}</div>
      <div class="cases">${kids.map((k,i) =>
        `<button class="case${S.kid && S.kid.node_id===k.node_id ? ' on':''}" data-i="${i}"><span class="key">${i+1}</span>${esc(k.label)}</button>`).join('')}</div>
+     ${unsaid.length ? `<div class="recap" style="color:var(--amber)">「${unsaid.map(esc).join('」「')}」은(는) 물어볼 말에 아직 없습니다 — 관리자 화면 → 증상 트리 → 코치(표준흐름) → ${esc(S.entry.label)}에서 ③④ 문장을 고쳐 주세요.</div>` : ''}
      ${S.kid ? `<div class="recap">복기: <b>"${esc(S.kid.label)}이신 거죠?"</b></div>` : ''}`;
   $('askBody').querySelectorAll('.case').forEach(b => b.onclick = () => chooseCase(+b.dataset.i));
 }
@@ -622,13 +626,13 @@ $('btnCost').onclick = () => {
   if(S.kid) chooseCase(S.kids.indexOf(S.kid));
 };
 
-/* 숫자키 1~3: 경우 선택 / Esc: 새 손님 */
+/* 숫자키 1~9: 경우 선택 / Esc: 새 손님 */
 document.addEventListener('keydown', e => {
   if(e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
     if(e.key === 'Escape') e.target.blur();
     return;
   }
-  if(/^[1-3]$/.test(e.key) && S.kids.length) chooseCase(+e.key - 1);
+  if(/^[1-9]$/.test(e.key) && S.kids[+e.key - 1]) chooseCase(+e.key - 1);
   if(e.key === 'Escape'){ resetConsult('위에서 <b>증상</b>을 고르거나, 환자가 한 말을 입력하세요.'); S.scopeDis=null; S.text=''; S.tq=''; S.tpath=[]; $('q').value=''; renderList(); renderTreeBox(); $('q').focus(); }
   if(e.key === '/'){ e.preventDefault(); $('q').focus(); $('q').select(); }
 });
