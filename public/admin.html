@@ -140,6 +140,39 @@ main{ flex:1; padding:14px 16px 60px; }
   padding:18px 16px calc(18px + env(safe-area-inset-bottom)); max-height:80vh; overflow-y:auto;
 }
 .modal-title{ font-size:15px; font-weight:800; margin-bottom:12px; }
+
+/* ---- 보기 탭 ---- */
+.vtabs{ display:flex; gap:4px; margin-bottom:8px; }
+.vtab{ flex:1; border:none; background:rgba(255,255,255,.1); color:rgba(255,255,255,.75); font-family:inherit; font-size:13px; font-weight:700; padding:8px 0; border-radius:8px; cursor:pointer; }
+.vtab.on{ background:#fff; color:var(--pine-deep); }
+
+/* ---- 약 목록 · 세트 ---- */
+.cat-tools{ display:flex; flex-direction:column; gap:7px; margin-bottom:4px; }
+.cat-tools input, .cat-input{ width:100%; font-family:inherit; font-size:14.5px; padding:10px 11px; border:1px solid var(--line); border-radius:9px; background:var(--card); color:var(--ink); }
+.cat-input{ margin-top:6px; }
+.cat-row{ display:flex; gap:7px; align-items:center; }
+.cat-row select{ flex:1; min-width:0; font-family:inherit; font-size:13px; padding:8px; border:1px solid var(--line); border-radius:9px; background:var(--card); color:var(--ink); }
+.cat-row .btn{ flex:0 0 auto; width:auto; margin-top:0; white-space:nowrap; }
+.cat-item{ display:flex; align-items:center; gap:10px; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:6px; cursor:pointer; }
+.cat-item:hover{ border-color:var(--pine); }
+.cat-main{ flex:1; min-width:0; }
+.cat-name{ font-size:14.5px; font-weight:700; word-break:break-word; }
+.cat-sub{ font-size:11.5px; color:var(--ink-soft); margin-top:1px; }
+.cat-price{ flex:0 0 auto; font-size:13.5px; font-weight:700; }
+.tag{ display:inline-block; font-size:10px; font-weight:700; border-radius:6px; padding:1px 5px; background:var(--paper); color:var(--ink-soft); vertical-align:middle; }
+.tag-o{ background:var(--danger-tint); color:var(--danger); }
+.tag-x{ background:var(--pine-tint); color:var(--pine); }
+.tag-t{ background:var(--amber-tint); color:var(--amber); }
+.tag-warn{ background:var(--amber-tint); color:var(--amber); font-size:11px; }
+.mini-field textarea{ width:100%; font-family:inherit; font-size:13px; padding:7px 8px; border:1px solid var(--line); border-radius:7px; background:var(--paper); color:var(--ink); resize:vertical; }
+.reason-row{ display:flex; gap:5px; align-items:center; margin-bottom:6px; }
+.reason-row input{ min-width:0; font-family:inherit; font-size:13px; padding:7px 8px; border:1px solid var(--line); border-radius:7px; background:var(--card); color:var(--ink); }
+.reason-row input[type=number]{ width:46px; flex:0 0 46px; }
+.reason-row input[type=text]{ flex:1; }
+.set-row{ background:var(--card); border:1px solid var(--line); border-radius:9px; padding:6px 8px; }
+.set-nm{ flex:1; font-size:13.5px; font-weight:600; }
+.ci-btns{ display:flex; gap:8px; margin-top:10px; }
+.ci-btns .btn{ flex:1; margin-top:0; }
 </style>
 </head>
 <body>
@@ -174,10 +207,17 @@ main{ flex:1; padding:14px 16px 60px; }
           <button class="hdrbtn" onclick="doLogout()">로그아웃</button>
         </div>
       </div>
+      <div class="vtabs">
+        <button class="vtab on" data-v="tree" onclick="switchView('tree')">증상 트리</button>
+        <button class="vtab" data-v="drugs" onclick="switchView('drugs')">약 목록</button>
+        <button class="vtab" data-v="sets" onclick="switchView('sets')">세트</button>
+      </div>
       <div class="crumbbar" id="crumbbar"></div>
     </header>
     <main>
       <div id="treeAdmin"></div>
+      <div id="drugAdmin" class="hidden"></div>
+      <div id="setAdmin" class="hidden"></div>
     </main>
   </div>
 
@@ -706,6 +746,300 @@ async function submitNewDrug(){
   if(error){ toast('등록 실패: '+error.message); return; }
   closeModal();
   await addDrugToLeaf(data.id, data.name, data.company);
+}
+
+// ================= 약 목록 · 세트 (DB 직접 편집) =================
+// 엑셀 없이 여기서만 고칩니다. 저장은 DB 함수(catalog_*)가 한 번에 처리하고 변경기록(catalog_changes)에 남깁니다.
+const SYS_LIST = ['진통·해열','감기·호흡기','소화기','피부','구강','안과','신경·기타','여성·비뇨기','의약외품·의료용품'];
+let VIEW = 'tree';
+let CAT = { items:[], sets:[], byId:{} };
+const DF = { q:'', filter:'', sys:'' };      // 약 목록 필터
+let EDIT_REASONS = [];                        // 편집 중인 권매사유
+let EDIT_SET = null;                          // 편집 중인 세트 { id, items:[drug_id] }
+
+function switchView(v){
+  VIEW = v;
+  document.querySelectorAll('.vtab').forEach(b => b.classList.toggle('on', b.dataset.v === v));
+  document.getElementById('crumbbar').classList.toggle('hidden', v !== 'tree');
+  document.getElementById('treeAdmin').classList.toggle('hidden', v !== 'tree');
+  document.getElementById('drugAdmin').classList.toggle('hidden', v !== 'drugs');
+  document.getElementById('setAdmin').classList.toggle('hidden', v !== 'sets');
+  if(v === 'tree') renderTree();
+  else loadCatalog();
+  window.scrollTo(0,0);
+}
+
+async function loadCatalog(){
+  const box = document.getElementById(VIEW === 'sets' ? 'setAdmin' : 'drugAdmin');
+  if(!CAT.items.length) box.innerHTML = '<div class="section-label">불러오는 중…</div>';
+  const [pd, rs, st] = await Promise.all([
+    sb.from('pharmacy_drugs').select('*, drugs(name,company,ingredients,status)').eq('pharmacy_id', PHARMACY_ID),
+    sb.from('pharmacy_drug_reasons').select('drug_id,priority,symptom,condition').eq('pharmacy_id', PHARMACY_ID),
+    sb.from('pharmacy_sets').select('*, pharmacy_set_items(drug_id,sort)').eq('pharmacy_id', PHARMACY_ID)
+  ]);
+  const err = pd.error || rs.error || st.error;
+  if(err){ box.innerHTML = `<div class="section-label">불러오지 못했습니다: ${escapeHtml(err.message)}</div>`; return; }
+  const inTree = new Set(LINKS.map(l => l.drug_id));
+  const reasons = {};
+  (rs.data||[]).forEach(r => (reasons[r.drug_id] = reasons[r.drug_id] || []).push({ p:r.priority, sym:r.symptom, cond:r.condition || '' }));
+  CAT.items = (pd.data||[]).map(r => ({
+    id:r.drug_id, name:r.display_name || (r.drugs && r.drugs.name) || '(이름 없음)', master:r.drugs ? r.drugs.name : '',
+    sys:r.system || '', dis:r.disease || '', brand:r.is_branded === true ? 'O' : r.is_branded === false ? 'X' : '',
+    short:r.short_label || '', tag:r.set_tag || '', ing:r.ingredients || (r.drugs && r.drugs.ingredients) || '',
+    eff:r.efficacy || '', caution:r.caution || '', maker:r.maker || (r.drugs && r.drugs.company) || '',
+    supplier:r.supplier || '', note:r.note || '', price:r.sale_price, cost:r.purchase_price,
+    pending:r.drugs && r.drugs.status === 'pending', inTree:inTree.has(r.drug_id),
+    reasons:(reasons[r.drug_id] || []).sort((a,b) => a.p - b.p)
+  })).sort((a,b) => a.name.localeCompare(b.name, 'ko'));
+  CAT.byId = {}; CAT.items.forEach(i => CAT.byId[i.id] = i);
+  CAT.sets = (st.data||[]).map(s => ({ id:s.id, name:s.name, sym:s.symptom || '', cond:s.condition || '', why:s.why || '',
+    p:s.priority ?? 9, items:(s.pharmacy_set_items||[]).sort((a,b) => a.sort - b.sort).map(i => i.drug_id) }))
+    .sort((a,b) => a.p - b.p || a.name.localeCompare(b.name, 'ko'));
+  if(VIEW === 'drugs') renderDrugList();
+  if(VIEW === 'sets') renderSetList();
+}
+
+// ---------- 약 목록 ----------
+function renderDrugList(){
+  const box = document.getElementById('drugAdmin');
+  const noPrice = CAT.items.filter(i => i.price == null).length;
+  box.innerHTML = `
+    <div class="cat-tools">
+      <input type="search" id="dq" placeholder="약 이름·성분·권매사유 검색" value="${escapeHtml(DF.q)}" oninput="DF.q=this.value; renderDrugRows()">
+      <div class="cat-row">
+        <select id="dsys" onchange="DF.sys=this.value; renderDrugRows()">
+          <option value="">계통 전체</option>
+          ${SYS_LIST.map(s => `<option ${DF.sys===s?'selected':''}>${s}</option>`).join('')}
+          <option value="__none" ${DF.sys==='__none'?'selected':''}>미분류</option>
+        </select>
+        <select id="dfilter" onchange="DF.filter=this.value; renderDrugRows()">
+          <option value="">전체</option>
+          <option value="noprice" ${DF.filter==='noprice'?'selected':''}>가격 없음 (${noPrice})</option>
+          <option value="noreason" ${DF.filter==='noreason'?'selected':''}>권매사유 없음</option>
+          <option value="O" ${DF.filter==='O'?'selected':''}>지명(O)</option>
+          <option value="X" ${DF.filter==='X'?'selected':''}>권매(X)</option>
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="openAddDrug()">+ 약 추가</button>
+      </div>
+    </div>
+    <div class="section-label" id="dcount"></div>
+    <div id="drows"></div>`;
+  renderDrugRows();
+}
+function drugHay(i){ return [i.name, i.master, i.ing, i.eff, i.dis, i.short, i.maker, ...i.reasons.map(r => r.sym + ' ' + r.cond)].join(' ').toLowerCase(); }
+function renderDrugRows(){
+  let xs = CAT.items;
+  if(DF.sys) xs = xs.filter(i => DF.sys === '__none' ? !i.sys : i.sys === DF.sys);
+  if(DF.filter === 'noprice') xs = xs.filter(i => i.price == null);
+  if(DF.filter === 'noreason') xs = xs.filter(i => !i.reasons.length);
+  if(DF.filter === 'O' || DF.filter === 'X') xs = xs.filter(i => i.brand === DF.filter);
+  const words = DF.q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if(words.length) xs = xs.filter(i => { const h = drugHay(i); return words.every(w => h.includes(w)); });
+  document.getElementById('dcount').textContent = `${xs.length}개 품목`;
+  document.getElementById('drows').innerHTML = xs.map(i => `
+    <div class="cat-item" onclick="openDrugEditor('${i.id}')">
+      <div class="cat-main">
+        <div class="cat-name">${escapeHtml(i.name)}
+          ${i.brand==='O' ? '<span class="tag tag-o">지명</span>' : i.brand==='X' ? '<span class="tag tag-x">권매</span>' : ''}
+          ${i.inTree ? '<span class="tag tag-t">상담 흐름</span>' : ''}
+          ${i.pending ? '<span class="tag">약국 전용</span>' : ''}</div>
+        <div class="cat-sub">${escapeHtml(i.sys ? i.sys + ' · ' + i.dis : '미분류')}${i.reasons.length ? ` · 권매사유 ${i.reasons.length}` : ''}</div>
+      </div>
+      <div class="cat-price">${i.price != null ? Number(i.price).toLocaleString() + '원' : '<span class="tag tag-warn">가격 없음</span>'}</div>
+    </div>`).join('') || '<div class="section-label">조건에 맞는 약이 없습니다.</div>';
+}
+
+function fieldHtml(label, id, value, opt={}){
+  const v = value == null ? '' : escapeHtml(String(value));
+  const input = opt.area ? `<textarea id="${id}" rows="2">${v}</textarea>`
+              : `<input id="${id}" type="${opt.type||'text'}" value="${v}" ${opt.list?`list="${opt.list}"`:''} ${opt.type==='number'?'min="0" inputmode="numeric"':''}>`;
+  return `<div class="mini-field${opt.full?' full':''}"><label>${label}</label>${input}</div>`;
+}
+function openDrugEditor(id){
+  const i = CAT.byId[id]; if(!i) return;
+  EDIT_REASONS = i.reasons.map(r => ({ ...r }));
+  const diseases = [...new Set(CAT.items.map(x => x.dis).filter(Boolean))].sort((a,b) => a.localeCompare(b,'ko'));
+  renderModal(`
+    <div class="modal-title">${escapeHtml(i.name)}</div>
+    ${i.master && i.master !== i.name ? `<div class="cat-sub" style="margin:-8px 0 10px">약 DB 이름: ${escapeHtml(i.master)}</div>` : ''}
+    <div class="drug-edit-grid">
+      ${fieldHtml('제품명 (화면에 보이는 이름)', 'e_name', i.name, {full:true})}
+      <div class="mini-field"><label>계통</label><select id="e_sys"><option value="">미분류</option>${SYS_LIST.map(s => `<option ${i.sys===s?'selected':''}>${s}</option>`).join('')}</select></div>
+      <div class="mini-field"><label>지명 / 권매</label><select id="e_brand">
+        <option value="" ${!i.brand?'selected':''}>정하지 않음</option>
+        <option value="O" ${i.brand==='O'?'selected':''}>지명(O) — 환자가 이름 대고 옴</option>
+        <option value="X" ${i.brand==='X'?'selected':''}>권매(X) — 약사가 권함</option></select></div>
+      ${fieldHtml('질환/증상', 'e_dis', i.dis, {full:true, list:'disList'})}
+      ${fieldHtml('판매가 (원)', 'e_price', i.price, {type:'number'})}
+      ${fieldHtml('사입가 (원)', 'e_cost', i.cost, {type:'number'})}
+      ${fieldHtml('짧은 상담문구', 'e_short', i.short)}
+      ${fieldHtml('세트태그', 'e_tag', i.tag)}
+      ${fieldHtml('성분', 'e_ing', i.ing, {full:true, area:true})}
+      ${fieldHtml('효능', 'e_eff', i.eff, {full:true})}
+      ${fieldHtml('주의·금기', 'e_caution', i.caution, {full:true, area:true})}
+      ${fieldHtml('제조사', 'e_maker', i.maker)}
+      ${fieldHtml('사입처', 'e_supplier', i.supplier)}
+      ${fieldHtml('비고', 'e_note', i.note, {full:true})}
+    </div>
+    <datalist id="disList">${diseases.map(d => `<option value="${escapeHtml(d)}">`).join('')}</datalist>
+    <div class="section-label">권매사유 — 우선순위 1이 먼저 권하는 약</div>
+    <div id="reasonRows"></div>
+    <button class="btn btn-ghost btn-sm" onclick="EDIT_REASONS.push({p:(EDIT_REASONS.length?Math.max(...EDIT_REASONS.map(r=>r.p||1))+1:1),sym:'',cond:''}); renderReasonRows()">+ 권매사유 추가</button>
+    <div class="ci-btns">
+      <button class="btn btn-primary" id="btnSaveDrug" onclick="saveDrug('${i.id}')">저장</button>
+    </div>
+    <div class="ci-btns">
+      <button class="btn btn-danger" onclick="removeDrug('${i.id}')">목록에서 빼기</button>
+      <button class="btn btn-ghost" onclick="closeModal()">닫기</button>
+    </div>`);
+  renderReasonRows();
+}
+function renderReasonRows(){
+  document.getElementById('reasonRows').innerHTML = EDIT_REASONS.map((r, k) => `
+    <div class="reason-row">
+      <input type="number" min="1" value="${r.p ?? ''}" title="우선순위" oninput="EDIT_REASONS[${k}].p=parseInt(this.value)||null">
+      <input type="text" placeholder="증상 (예: 속쓰림)" value="${escapeHtml(r.sym)}" oninput="EDIT_REASONS[${k}].sym=this.value">
+      <input type="text" placeholder="조건 (예: 야간·지속)" value="${escapeHtml(r.cond)}" oninput="EDIT_REASONS[${k}].cond=this.value">
+      <button class="miniicon on" title="삭제" onclick="EDIT_REASONS.splice(${k},1); renderReasonRows()">&#10005;</button>
+    </div>`).join('') || '<div class="cat-sub" style="margin-bottom:8px">권매사유가 없습니다.</div>';
+}
+const vOf = id => document.getElementById(id).value;
+const numOf = id => { const v = vOf(id).trim(); if(v === '') return null; const n = parseInt(v.replace(/,/g,''), 10); return isFinite(n) ? n : NaN; };
+async function saveDrug(id){
+  const price = numOf('e_price'), cost = numOf('e_cost');
+  if(Number.isNaN(price) || Number.isNaN(cost)){ toast('가격은 숫자로 입력해 주세요'); return; }
+  if(!vOf('e_name').trim()){ toast('제품명을 입력해 주세요'); return; }
+  const p = { name:vOf('e_name'), sys:vOf('e_sys'), dis:vOf('e_dis'), brand:vOf('e_brand'), short:vOf('e_short'), tag:vOf('e_tag'),
+              ing:vOf('e_ing'), eff:vOf('e_eff'), caution:vOf('e_caution'), maker:vOf('e_maker'), supplier:vOf('e_supplier'),
+              note:vOf('e_note'), price, cost };
+  const reasons = EDIT_REASONS.filter(r => (r.sym||'').trim()).map(r => ({ p:r.p || 9, sym:r.sym, cond:r.cond }));
+  const btn = document.getElementById('btnSaveDrug'); btn.disabled = true; btn.textContent = '저장 중…';
+  const { error } = await sb.rpc('catalog_save_drug', { p_drug_id:id, p, p_reasons:reasons });
+  if(error){ btn.disabled = false; btn.textContent = '저장'; toast('저장하지 못했습니다: ' + error.message); return; }
+  closeModal(); toast('저장했습니다');
+  await Promise.all([loadCatalog(), loadAll()]);
+}
+async function removeDrug(id){
+  const i = CAT.byId[id];
+  if(!confirm(`「${i.name}」을(를) 약 목록에서 뺄까요?\n가격과 권매사유도 함께 지워집니다. (변경기록에는 남습니다)`)) return;
+  const { error } = await sb.rpc('catalog_remove_drug', { p_drug_id:id });
+  if(error){ toast(error.message); return; }
+  closeModal(); toast('목록에서 뺐습니다');
+  await Promise.all([loadCatalog(), loadAll()]);
+}
+
+// 약 추가: 약 DB에서 찾아 연결, 없으면 약국 전용 약으로 새로 등록
+let addTimer = null;
+function openAddDrug(){
+  renderModal(`
+    <div class="modal-title">약 목록에 추가</div>
+    <input type="search" id="addq" class="cat-input" placeholder="약 이름 검색 (약 DB 2만여 개)" oninput="searchAdd(this.value)">
+    <div id="addResults"></div>
+    <button class="btn btn-ghost" style="margin-top:10px;width:100%;" onclick="closeModal()">닫기</button>`);
+  document.getElementById('addq').focus();
+}
+function searchAdd(q){
+  clearTimeout(addTimer);
+  q = q.trim();
+  const box = document.getElementById('addResults');
+  if(!q){ box.innerHTML = ''; return; }
+  addTimer = setTimeout(async () => {
+    const { data, error } = await sb.from('drugs').select('id,name,company,status').ilike('name', '%' + q + '%').limit(20);
+    if(error){ box.innerHTML = `<div class="searchResultItem">검색 오류: ${escapeHtml(error.message)}</div>`; return; }
+    box.innerHTML = (data||[]).map(d => {
+      const have = !!CAT.byId[d.id];
+      return `<div class="searchResultItem" ${have ? 'style="opacity:.5"' : `onclick="addDrug('${d.id}', null)"`}>
+        <b>${escapeHtml(d.name)}</b>${have ? ' <span class="tag">이미 있음</span>' : ''}
+        <div class="sub">${escapeHtml(d.company || '')}${d.status==='pending' ? ' · 약국 전용' : ''}</div></div>`;
+    }).join('') + `<div class="searchResultItem" style="border-style:dashed;color:var(--pine);font-weight:700;" onclick="addDrug(null, document.getElementById('addq').value)">
+        찾는 약이 없으면 「${escapeHtml(q)}」을(를) 약국 전용 약으로 새로 등록</div>`;
+  }, 250);
+}
+async function addDrug(drugId, name){
+  const { data, error } = await sb.rpc('catalog_add_drug', { p_drug_id:drugId, p_name:name });
+  if(error){ toast(error.message); return; }
+  closeModal(); toast('추가했습니다 — 가격과 분류를 채워 주세요');
+  await loadCatalog();
+  openDrugEditor(data);
+}
+
+// ---------- 세트 ----------
+function renderSetList(){
+  const nm = id => CAT.byId[id] ? CAT.byId[id].name : '(목록에 없는 약)';
+  document.getElementById('setAdmin').innerHTML = `
+    <div class="cat-row" style="margin-bottom:6px">
+      <div class="section-label" style="margin:0;flex:1">세트 ${CAT.sets.length}건 — 우선순위 순</div>
+      <button class="btn btn-primary btn-sm" onclick="openSetEditor(null)">+ 새 세트</button>
+    </div>
+    ${CAT.sets.map(s => `
+      <div class="cat-item" onclick="openSetEditor('${s.id}')">
+        <div class="cat-main">
+          <div class="cat-name"><span class="tag">${s.p}</span> ${escapeHtml(s.name)}</div>
+          <div class="cat-sub">${s.items.map(x => escapeHtml(nm(x))).join(' + ')}</div>
+          ${s.why ? `<div class="cat-sub" style="margin-top:2px">${escapeHtml(s.why)}</div>` : ''}
+        </div>
+      </div>`).join('') || '<div class="section-label">세트가 없습니다.</div>'}`;
+}
+function openSetEditor(id){
+  const s = id ? CAT.sets.find(x => x.id === id) : { name:'', sym:'', cond:'', why:'', p:9, items:[] };
+  EDIT_SET = { id, items:[...s.items] };
+  renderModal(`
+    <div class="modal-title">${id ? '세트 고치기' : '새 세트'}</div>
+    <div class="drug-edit-grid">
+      ${fieldHtml('세트 이름', 's_name', s.name, {full:true})}
+      ${fieldHtml('증상', 's_sym', s.sym)}
+      ${fieldHtml('우선순위', 's_p', s.p, {type:'number'})}
+      ${fieldHtml('조건', 's_cond', s.cond, {full:true})}
+      ${fieldHtml('권매 이유', 's_why', s.why, {full:true, area:true})}
+    </div>
+    <div class="section-label">구성 약 (2개 이상, 순서대로)</div>
+    <div id="setItems"></div>
+    <input type="search" id="setq" class="cat-input" placeholder="약 목록에서 찾아 넣기" oninput="renderSetPick(this.value)">
+    <div id="setPick"></div>
+    <div class="ci-btns"><button class="btn btn-primary" id="btnSaveSet" onclick="saveSet()">저장</button></div>
+    <div class="ci-btns">
+      ${id ? `<button class="btn btn-danger" onclick="removeSet('${id}')">세트 삭제</button>` : ''}
+      <button class="btn btn-ghost" onclick="closeModal()">닫기</button>
+    </div>`);
+  renderSetItems();
+}
+function renderSetItems(){
+  document.getElementById('setItems').innerHTML = EDIT_SET.items.map((x, k) => `
+    <div class="reason-row set-row">
+      <span class="tag">${k+1}</span>
+      <span class="set-nm">${escapeHtml(CAT.byId[x] ? CAT.byId[x].name : '(목록에 없는 약)')}</span>
+      ${k > 0 ? `<button class="miniicon" title="위로" onclick="moveSetItem(${k},-1)">&#8593;</button>` : ''}
+      <button class="miniicon on" title="빼기" onclick="EDIT_SET.items.splice(${k},1); renderSetItems()">&#10005;</button>
+    </div>`).join('') || '<div class="cat-sub" style="margin-bottom:8px">아래에서 약을 찾아 넣으세요.</div>';
+}
+function moveSetItem(k, d){ const a = EDIT_SET.items; [a[k+d], a[k]] = [a[k], a[k+d]]; renderSetItems(); }
+function renderSetPick(q){
+  const box = document.getElementById('setPick');
+  const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if(!words.length){ box.innerHTML = ''; return; }
+  const xs = CAT.items.filter(i => !EDIT_SET.items.includes(i.id) && words.every(w => drugHay(i).includes(w))).slice(0, 12);
+  box.innerHTML = xs.map(i => `<div class="searchResultItem" onclick="EDIT_SET.items.push('${i.id}'); renderSetItems(); document.getElementById('setq').value=''; renderSetPick('')">
+      <b>${escapeHtml(i.name)}</b><div class="sub">${escapeHtml(i.sys ? i.sys + ' · ' + i.dis : '미분류')}</div></div>`).join('')
+    || '<div class="cat-sub">약 목록에 없습니다. 「약 목록」 탭에서 먼저 추가하세요.</div>';
+}
+async function saveSet(){
+  const pr = numOf('s_p');
+  if(Number.isNaN(pr)){ toast('우선순위는 숫자로 입력해 주세요'); return; }
+  if(EDIT_SET.items.length < 2){ toast('구성 약을 2개 이상 넣어 주세요'); return; }
+  const p = { name:vOf('s_name'), sym:vOf('s_sym'), cond:vOf('s_cond'), why:vOf('s_why'), p:pr };
+  const btn = document.getElementById('btnSaveSet'); btn.disabled = true; btn.textContent = '저장 중…';
+  const { error } = await sb.rpc('catalog_save_set', { p_set_id:EDIT_SET.id, p, p_items:EDIT_SET.items });
+  if(error){ btn.disabled = false; btn.textContent = '저장'; toast('저장하지 못했습니다: ' + error.message); return; }
+  closeModal(); toast('세트를 저장했습니다');
+  await loadCatalog();
+}
+async function removeSet(id){
+  const s = CAT.sets.find(x => x.id === id);
+  if(!confirm(`「${s.name}」 세트를 삭제할까요? (변경기록에는 남습니다)`)) return;
+  const { error } = await sb.rpc('catalog_remove_set', { p_set_id:id });
+  if(error){ toast(error.message); return; }
+  closeModal(); toast('세트를 삭제했습니다');
+  await loadCatalog();
 }
 
 // ================= MODAL =================

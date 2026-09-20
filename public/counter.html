@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>상담 화면 — 성빈약국</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  :root{
+    --paper:#F2F4F3; --card:#FFFFFF; --ink:#16201C; --muted:#69736E; --line:#DDE3E0;
+    --green:#0E6B4E; --green-soft:#E6F1EC; --green-ink:#0B4A36;
+    --amber:#8A5A12; --amber-soft:#FBF1DF;
+    --danger:#8C2F24; --danger-soft:#FCEFEC;
+    --blue:#1D4E89; --blue-soft:#E8EFF8;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);
+    font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    font-size:16px;line-height:1.55;-webkit-text-size-adjust:100%}
+  button{font:inherit;color:inherit}
+  .hidden{display:none!important}
+  :focus-visible{outline:3px solid #9CC9B6;outline-offset:2px}
+
+  /* ── 상단 바 ── */
+  .top{position:sticky;top:0;z-index:5;background:var(--ink);color:#fff}
+  .top-in{max-width:1400px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .top h1{margin:0;font-size:18px;font-weight:700;letter-spacing:-.02em}
+  .top .who{font-size:13px;opacity:.7}
+  .top .sp{flex:1}
+  .tbtn{background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:9px;padding:6px 12px;font-size:14px;cursor:pointer}
+  .tbtn.on{background:#fff;color:var(--ink);border-color:#fff}
+  .search{flex:1 1 360px;min-width:220px;display:flex;gap:8px}
+  .search input{flex:1;min-width:0;font:inherit;font-size:17px;padding:9px 14px;border-radius:10px;border:0;background:#fff;color:var(--ink)}
+  .search button{border:0;border-radius:10px;padding:9px 16px;background:var(--green);color:#fff;font-weight:600;cursor:pointer}
+
+  .wrap{max-width:1400px;margin:0 auto;padding:16px 20px 60px}
+
+  /* ── 주호소 줄 ── */
+  .entries{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .entry{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 16px;font-size:16px;font-weight:600;cursor:pointer}
+  .entry:hover{border-color:var(--green)}
+  .entry.on{background:var(--green);border-color:var(--green);color:#fff}
+  .entry .k{display:inline-block;min-width:18px;margin-right:6px;font-size:12px;opacity:.55;font-weight:500}
+
+  /* ── 상담 3칸 ── */
+  .consult{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:14px;align-items:start}
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px}
+  .panel h2{margin:0 0 10px;font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.02em}
+  .ask{font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.5;color:var(--green-ink);background:var(--green-soft);border-radius:12px;padding:14px 16px}
+  .ask small{display:block;font-size:12px;font-weight:600;color:#3C7761;margin-bottom:4px;letter-spacing:0}
+  .cases{display:grid;gap:8px;margin-top:12px}
+  .case{display:flex;align-items:center;gap:12px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 14px;font-size:18px;font-weight:600;cursor:pointer}
+  .case:hover{border-color:var(--green)}
+  .case.on{border-color:var(--green);box-shadow:inset 0 0 0 1px var(--green);background:#F6FBF8}
+  .case .key{flex:none;width:26px;height:26px;border-radius:7px;background:var(--paper);display:grid;place-items:center;font-size:13px;color:var(--muted)}
+  .case.on .key{background:var(--green);color:#fff}
+  .recap{margin-top:12px;font-size:14px;color:var(--muted)}
+  .recap b{color:var(--ink)}
+  .empty{color:var(--muted);font-size:15px;padding:18px 4px}
+  .empty b{color:var(--ink)}
+
+  .say{font-size:17px;font-weight:600;line-height:1.55;padding:12px 14px;border-radius:12px;background:var(--blue-soft);color:var(--blue);margin-bottom:12px}
+  .say small{display:block;font-size:12px;opacity:.8;margin-bottom:2px}
+  .drug{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line)}
+  .drug:first-of-type{border-top:0}
+  .tier{flex:none;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;margin-top:4px;background:var(--green-soft);color:var(--green-ink)}
+  .tier.add{background:var(--amber-soft);color:var(--amber)}
+  .tier.alt{background:var(--paper);color:var(--muted)}
+  .drug .body{flex:1;min-width:0}
+  .drug .nm{font-size:19px;font-weight:700;letter-spacing:-.01em}
+  .drug .nt{font-size:14px;color:var(--muted)}
+  .drug .sh{display:inline-block;margin-top:3px;font-size:13px;color:var(--green-ink);background:var(--green-soft);border-radius:6px;padding:1px 7px}
+  .drug .pr{flex:none;text-align:right;font-weight:600;font-size:16px;white-space:nowrap}
+  .drug .pr .c{display:block;font-size:12px;font-weight:500;color:var(--muted)}
+  .when{font-size:14px;color:var(--muted);margin-bottom:2px}
+  .sub{margin-top:14px;font-size:13px;font-weight:600;color:var(--muted)}
+  .guide{margin-top:8px;font-size:16px;line-height:1.6;padding:12px 14px;border:1px solid var(--line);border-radius:12px}
+  .red{margin-top:8px;font-size:15px;line-height:1.6;padding:12px 14px;border-radius:12px;background:var(--danger-soft);color:var(--danger)}
+  .red b{display:block;font-size:12px;margin-bottom:2px}
+  .set{margin-top:8px;padding:10px 14px;border-radius:12px;border:1px dashed var(--line);font-size:15px}
+  .set b{font-weight:700}
+  .set .why{font-size:13px;color:var(--muted);margin-top:2px}
+
+  /* ── 약 목록 ── */
+  .listhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:26px 0 10px}
+  .listhead h3{margin:0;font-size:17px;font-weight:700}
+  .scope{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;background:var(--green-soft);color:var(--green-ink);border-radius:999px;padding:4px 6px 4px 12px}
+  .scope button{border:0;background:rgba(0,0,0,.08);border-radius:999px;width:20px;height:20px;cursor:pointer;line-height:1}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:14px;cursor:pointer}
+  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
+  .tools select{font:inherit;font-size:14px;padding:6px 10px;border-radius:9px;border:1px solid var(--line);background:var(--card)}
+  .count{font-size:13px;color:var(--muted);margin-left:auto}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+  .card .h{display:flex;align-items:flex-start;gap:8px}
+  .card .h .n{font-size:17px;font-weight:700;flex:1;min-width:0}
+  .badge{flex:none;font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px}
+  .b-top{background:var(--blue);color:#fff}
+  .b-o{background:var(--danger-soft);color:var(--danger)}
+  .b-set{background:var(--amber-soft);color:var(--amber)}
+  .rs{margin:6px 0 0;padding:0;list-style:none}
+  .rs li{font-size:14px;color:var(--blue);font-weight:600;display:flex;gap:6px}
+  .rs li .p{flex:none;width:18px;height:18px;border-radius:50%;background:var(--blue-soft);font-size:11px;display:grid;place-items:center;margin-top:2px}
+  .rs li .c{color:var(--muted);font-weight:500}
+  .tags{margin-top:6px;font-size:12px;color:var(--muted)}
+  .kv{margin-top:6px;font-size:13px;line-height:1.5}
+  .kv span{color:var(--muted);display:inline-block;min-width:34px}
+  .money{margin-top:8px;display:flex;gap:14px;font-size:14px;align-items:baseline}
+  .money .sale{font-weight:700;font-size:15px}
+  .money .cost{color:var(--muted)}
+  .money .pf{color:var(--green);font-weight:600}
+
+  /* ── 로그인 ── */
+  .login{max-width:360px;margin:14vh auto;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:24px}
+  .login h1{font-size:20px;margin:0 0 4px}.login p{margin:0 0 16px;font-size:14px;color:var(--muted)}
+  .login input{width:100%;margin-bottom:10px;font:inherit;padding:11px 12px;border:1px solid var(--line);border-radius:10px}
+  .login button{width:100%;border:0;border-radius:10px;padding:12px;background:var(--green);color:#fff;font-weight:600;cursor:pointer}
+  .err{color:var(--danger);font-size:14px;margin-top:10px}
+  .note{font-size:13px;color:var(--muted);margin-top:6px}
+  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:9}
+
+  @media (max-width:900px){ .consult{grid-template-columns:1fr} .ask{font-size:19px} }
+</style>
+</head>
+<body>
+
+<div id="login" class="login hidden">
+  <h1>상담 화면</h1>
+  <p>약국 계정으로 로그인하세요.</p>
+  <input id="email" type="email" placeholder="이메일" autocomplete="username">
+  <input id="pw" type="password" placeholder="비밀번호" autocomplete="current-password">
+  <button id="btnLogin">로그인</button>
+  <div id="loginErr" class="err"></div>
+</div>
+
+<div id="app" class="hidden">
+  <div class="top"><div class="top-in">
+    <h1>상담 화면</h1><span class="who" id="who"></span>
+    <form class="search" id="searchForm" autocomplete="off">
+      <input id="q" type="text" placeholder="환자가 한 말 — 예: 속이 쓰려요, 무좀, 파모티딘">
+      <button type="submit">찾기</button>
+    </form>
+    <span class="sp"></span>
+    <button class="tbtn" id="btnCost" aria-pressed="false">원가</button>
+    <button class="tbtn" id="btnReload" title="관리자 화면에서 약을 고친 뒤 누르세요">목록 새로고침</button>
+    <button class="tbtn" id="btnLogout">로그아웃</button>
+  </div></div>
+
+  <main class="wrap">
+    <div class="entries" id="entries"></div>
+
+    <section class="consult">
+      <div class="panel" id="pAsk">
+        <h2>① 물어볼 말</h2>
+        <div id="askBody" class="empty">위에서 <b>증상</b>을 고르거나, 환자가 한 말을 입력하세요.<br>숫자키 <b>1~3</b>으로 경우를 고를 수 있습니다.</div>
+      </div>
+      <div class="panel" id="pRec">
+        <h2>② 추천 · 복약지도</h2>
+        <div id="recBody" class="empty">경우를 고르면 추천약과 복약지도가 여기에 나옵니다.</div>
+      </div>
+    </section>
+
+    <div class="listhead">
+      <h3>약 목록</h3>
+      <span id="scope" class="scope hidden"><span id="scopeTxt"></span><button id="scopeX" aria-label="범위 해제">×</button></span>
+      <span class="count" id="count"></span>
+    </div>
+    <div class="chips" id="sysChips"></div>
+    <div class="tools">
+      <select id="fBrand">
+        <option value="">지명구매 전체</option>
+        <option value="X">권매(X)만</option>
+        <option value="O">지명(O)만</option>
+      </select>
+      <select id="fSort">
+        <option value="p">우선순위 순</option>
+        <option value="profit">수익 높은 순</option>
+        <option value="price">판매가 낮은 순</option>
+        <option value="name">이름 순</option>
+      </select>
+      <span class="note" id="dataInfo"></span>
+    </div>
+    <div class="grid" id="grid"></div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
+/* =========================================================================
+   상담 화면 (counter.html) — 노트북용
+   · 위: 음성 코치와 같은 DB·같은 함수(coach_*)로 ①물어볼 말 → ②추천·복약지도
+   · 아래: DB(counter_catalog)에서 읽는 약 목록 — 권매사유·세트·짧은 문구 포함
+     약 데이터는 관리자 화면(약 목록·세트 탭)에서만 고칩니다 (이 화면은 읽기만 함)
+   나중에 React로 옮기기 쉽게 기능별로 나눠 둠:
+     [DB] db.*   [데이터] Data.*   [상태] S   [화면] render*   [이벤트] on*
+   ========================================================================= */
+
+/* ── [DB] Supabase ── */
+const sb = supabase.createClient('https://letwvftkomuxxbhnswyf.supabase.co',
+                                 'sb_publishable_Ow_wnycgPkTubzv-sjg96w_by39lUOF');
+const db = {
+  async entries(){
+    const { data } = await sb.from('pharmacy_taxonomy').select('id,label,sort_order,is_entry').eq('is_entry', true).order('sort_order');
+    return data || [];
+  },
+  async start(text){ const { data } = await sb.rpc('coach_start', { p_utterance:text }); return data && data[0]; },
+  async children(id){ const { data } = await sb.rpc('coach_children', { p_node_id:id }); return Array.isArray(data) ? data : []; },
+  async pick(parent, label){ const { data } = await sb.rpc('coach_pick', { p_parent_id:parent, p_utterance:label }); return data && data[0]; },
+  async node(id){ const { data } = await sb.rpc('coach_node', { p_node_id:id }); return data || {}; },
+  async alts(id){ const { data } = await sb.rpc('coach_alts', { p_node_id:id }); return Array.isArray(data) ? data : []; },
+  async catalog(){
+    const { data, error } = await sb.rpc('counter_catalog');
+    if(error) throw error;
+    return data || { items:[], sets:[] };
+  },
+  async miss(parent, text){ try{ await sb.from('coach_misses').insert({ pharmacy_id:S.pharmacyId, parent_id:parent, utterance:text }); }catch(_){} }
+};
+
+/* ── [데이터] DB 약 목록 ── */
+const Data = {
+  items:[], sets:[], info:'',
+  load(obj){
+    this.items = (obj.items || []).map(i => ({ ...i, profit:(i.price != null && i.cost != null) ? i.price - i.cost : null }));
+    this.sets = obj.sets || [];
+    this.byId = new Map(this.items.map(i => [i.id, i]));
+    this.byNorm = new Map(this.items.map(i => [norm(i.name), i]));
+    const up = obj.updated ? new Date(obj.updated) : null;
+    this.info = `DB · ${this.items.length}개 품목 · 세트 ${this.sets.length}개` +
+                (up ? ` · ${up.getMonth()+1}/${up.getDate()} ${String(up.getHours()).padStart(2,'0')}:${String(up.getMinutes()).padStart(2,'0')} 반영` : '');
+  },
+  find(name, id){                   // 추천약 → 약 목록 (id 우선, 없으면 이름 표기 차이 흡수)
+    if(id && this.byId.has(id)) return this.byId.get(id);
+    const k = norm(name); if(!k) return null;
+    if(this.byNorm.has(k)) return this.byNorm.get(k);
+    for(const [nk, it] of this.byNorm){
+      if(nk.length >= 3 && k.length >= 3 && (nk.startsWith(k) || k.startsWith(nk))) return it;
+    }
+    return null;
+  },
+  setsFor(ids){                     // 추천약이 들어간 세트
+    const want = new Set(ids.filter(Boolean));
+    return this.sets.filter(s => (s.ids || []).some(x => want.has(x))).sort((a,b) => a.p - b.p);
+  }
+};
+function norm(s){ return String(s||'').replace(/\([^)]*\)/g,'').replace(/[^가-힣A-Za-z0-9]/g,'').toLowerCase(); }
+
+/* 주호소(DB) → 약 목록 질환 이름 */
+const ENTRY_TO_DIS = {
+  '두통':['해열·진통 (두통·치통·생리통)'], '생리통':['해열·진통 (두통·치통·생리통)'],
+  '근육통·관절통':['근육통·관절통·신경통','멍·부기·타박상'], '설사':['설사'],
+  '속쓰림':['속쓰림·위산과다·위염'], '소화불량·체함':['소화불량·체함','복통·위경련·과민성대장'],
+  '목 아픔':['인후통·목감기'], '콧물·코막힘(비염)':['코감기·알레르기 비염'],
+  '기침·가래':['기침·가래'], '종합감기':['종합감기']
+};
+
+/* ── [상태] ── */
+const S = {
+  pharmacyId:null, entries:[], entry:null, entryNode:{}, kids:[], kid:null,
+  showCost:false, sys:'', brand:'', sort:'p', text:'', scopeDis:null
+};
+
+/* ── 인증 ── */
+const $ = id => document.getElementById(id);
+async function boot(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session){ show('login'); return; }
+  S.pharmacyId = session.user.id;
+  const { data } = await sb.from('pharmacies').select('name').eq('id', session.user.id).maybeSingle();
+  $('who').textContent = data?.name || session.user.email;
+  show('app');
+  S.entries = await db.entries();
+  renderEntries();
+  await loadCatalog();
+  $('q').focus();
+}
+async function loadCatalog(){
+  $('grid').innerHTML = '<div class="empty">약 목록을 불러오는 중…</div>';
+  try{ Data.load(await db.catalog()); }
+  catch(err){ Data.load({}); Data.info = '약 목록을 불러오지 못했습니다 — 목록 새로고침을 눌러 주세요'; }
+  renderList();
+}
+function show(w){ $('login').classList.toggle('hidden', w!=='login'); $('app').classList.toggle('hidden', w!=='app'); }
+$('btnLogin').onclick = async () => {
+  $('loginErr').textContent = '';
+  const { error } = await sb.auth.signInWithPassword({ email:$('email').value.trim(), password:$('pw').value });
+  if(error){ $('loginErr').textContent = '로그인하지 못했습니다. 이메일과 비밀번호를 확인하세요.'; return; }
+  boot();
+};
+$('pw').addEventListener('keydown', e => { if(e.key==='Enter') $('btnLogin').click(); });
+$('btnLogout').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+
+/* ── [화면] 주호소 줄 ── */
+function renderEntries(){
+  $('entries').innerHTML = S.entries.map((e,i) =>
+    `<button class="entry${S.entry && S.entry.id===e.id ? ' on':''}" data-id="${e.id}">${esc(e.label)}</button>`).join('');
+  $('entries').querySelectorAll('.entry').forEach(b => b.onclick = () => chooseEntry(S.entries.find(e => e.id===b.dataset.id)));
+}
+
+/* ── [이벤트] 입력 → 주호소 찾기 ── */
+$('searchForm').onsubmit = async ev => {
+  ev.preventDefault();
+  const t = $('q').value.trim();
+  S.text = t;
+  if(!t){ renderList(); return; }
+  const hit = await db.start(t);
+  if(hit){
+    const e = S.entries.find(x => x.id === hit.node_id) || { id:hit.node_id, label:hit.label };
+    await chooseEntry(e, hit.guess);
+    S.text = '';                                   // 주호소로 잡히면 목록은 질환 범위로
+  } else {
+    db.miss(null, t);
+    resetConsult(`<b>${esc(t)}</b> — 상담 흐름에 없는 증상입니다. 아래 <b>약 목록</b>에서 찾아보세요.`);
+    S.scopeDis = null;
+  }
+  renderList();
+};
+
+async function chooseEntry(e, guessed){
+  if(!e) return;
+  S.entry = e; S.kid = null;
+  renderEntries();
+  $('askBody').innerHTML = '<div class="empty">불러오는 중…</div>';
+  const [node, kids] = await Promise.all([db.node(e.id), db.children(e.id)]);
+  S.entryNode = node; S.kids = kids.slice(0,3);
+  S.scopeDis = ENTRY_TO_DIS[e.label] || null;
+  renderAsk(guessed);
+  $('recBody').innerHTML = '<div class="empty">환자 답에 맞는 경우를 고르세요.</div>';
+  renderList();
+}
+
+function renderAsk(guessed){
+  const n = S.entryNode, kids = S.kids;
+  const ask = n.ask_text || kids.map(k => k.label).join('? ') + '?';
+  $('askBody').innerHTML =
+    `<div class="ask"><small>${guessed ? '「'+esc(S.entry.label)+'」로 이해했습니다 — ' : ''}이렇게 물어보세요</small>${esc(ask)}</div>
+     <div class="cases">${kids.map((k,i) =>
+       `<button class="case${S.kid && S.kid.node_id===k.node_id ? ' on':''}" data-i="${i}"><span class="key">${i+1}</span>${esc(k.label)}</button>`).join('')}</div>
+     ${S.kid ? `<div class="recap">복기: <b>"${esc(S.kid.label)}이신 거죠?"</b></div>` : ''}`;
+  $('askBody').querySelectorAll('.case').forEach(b => b.onclick = () => chooseCase(+b.dataset.i));
+}
+
+/* ── [이벤트] 경우 선택 → 추천 ── */
+async function chooseCase(i){
+  const k = S.kids[i]; if(!k) return;
+  S.kid = k; renderAsk();
+  $('recBody').innerHTML = '<div class="empty">불러오는 중…</div>';
+  const [r, node, alts] = await Promise.all([db.pick(S.entry.id, k.label), db.node(k.node_id), db.alts(k.node_id)]);
+  renderRec(r ? (r.drugs || []) : [], node, alts);
+}
+
+function priceCell(dbPrice, it){
+  const sale = dbPrice ?? it?.price;
+  let h = sale ? won(sale) : '';
+  if(S.showCost && it && it.cost != null){
+    const pf = (sale ?? 0) - it.cost;
+    h += `<span class="c">사입 ${won(it.cost)} · 수익 ${won(pf)}</span>`;
+  }
+  return h;
+}
+
+function renderRec(drugs, node, alts){
+  const rows = drugs.map(d => {
+    const it = Data.find(d.name, d.drug_id);
+    return `<div class="drug">
+      <span class="tier${d.tier==='add_on'?' add':''}">${d.tier==='add_on'?'함께':'기본'}</span>
+      <div class="body"><div class="nm">${esc(plain(d.name))}</div>
+        ${d.note ? `<div class="nt">${esc(d.note)}</div>` : ''}
+        ${it && it.short ? `<span class="sh">${esc(it.short)}</span>` : ''}</div>
+      <div class="pr">${priceCell(d.sale_price, it)}</div></div>`;
+  }).join('');
+  const altRows = alts.map(a => {
+    const it = Data.find(a.name, a.drug_id);
+    return `<div class="drug">
+      <span class="tier alt">대안</span>
+      <div class="body"><div class="when">${esc(a.alt_when||'')}</div><div class="nm" style="font-size:17px">${esc(plain(a.name))}</div>
+        ${a.note ? `<div class="nt">${esc(a.note)}</div>` : ''}</div>
+      <div class="pr">${priceCell(a.sale_price, it)}</div></div>`;
+  }).join('');
+  const sets = Data.setsFor(drugs.map(d => d.drug_id)).slice(0,2);
+  const setRows = sets.map(s => `<div class="set"><b>${esc(s.name)}</b> — ${s.items.map(esc).join(' + ')}<div class="why">${esc(s.why)}</div></div>`).join('');
+  const guide = node.guide_text, red = S.entryNode.guide_text;
+
+  $('recBody').innerHTML =
+    (node.say_text ? `<div class="say"><small>권하는 말</small>${esc(node.say_text)}</div>` : '') +
+    (rows || '<div class="empty">연결된 추천약이 없습니다.</div>') +
+    (altRows ? `<div class="sub">상황에 따라</div>${altRows}` : '') +
+    (guide ? `<div class="sub">복약지도 — 이렇게 말씀하세요</div><div class="guide">${esc(guide)}</div>` : '') +
+    (red ? `<div class="red"><b>이럴 땐 병원으로</b>${esc(red)}</div>` : '') +
+    (setRows ? `<div class="sub">함께 권하기 (세트)</div>${setRows}` : '');
+}
+
+function resetConsult(msg){
+  S.entry = null; S.kid = null; S.kids = []; S.entryNode = {};
+  renderEntries();
+  $('askBody').innerHTML = `<div class="empty">${msg}</div>`;
+  $('recBody').innerHTML = '<div class="empty">경우를 고르면 추천약과 복약지도가 여기에 나옵니다.</div>';
+}
+
+/* ── [화면] 약 목록 ── */
+const SYS = ['진통·해열','감기·호흡기','소화기','피부','구강','안과','신경·기타','여성·비뇨기','의약외품·의료용품'];
+const OTHER = '미분류';
+function renderSysChips(){
+  const extra = Data.items.some(i => !i.sys) ? [OTHER] : [];
+  $('sysChips').innerHTML = ['', ...SYS, ...extra].map(s =>
+    `<button class="chip${S.sys===s?' on':''}" data-s="${s}">${s||'전체'}</button>`).join('');
+  $('sysChips').querySelectorAll('.chip').forEach(b => b.onclick = () => { S.sys = b.dataset.s; renderList(); });
+}
+function hay(it){
+  return [it.name,it.ing,it.eff,it.dis,it.sys,it.short,it.tag,it.maker,...it.reasons.map(r=>r.raw)].join(' ').toLowerCase();
+}
+function renderList(){
+  renderSysChips();
+  let xs = Data.items;
+  if(S.scopeDis){ xs = xs.filter(i => S.scopeDis.includes(i.dis)); }
+  if(S.sys) xs = xs.filter(i => S.sys === OTHER ? !i.sys : i.sys === S.sys);
+  if(S.brand) xs = xs.filter(i => i.brand === S.brand);
+  if(S.text){
+    const words = S.text.toLowerCase().split(/\s+/).filter(w => w.length >= 1);
+    xs = xs.filter(i => { const h = hay(i); return words.some(w => h.includes(w)); });
+  }
+  const sorters = {
+    p: (a,b) => a.top - b.top || (b.profit||0) - (a.profit||0),
+    profit: (a,b) => (b.profit||0) - (a.profit||0),
+    price: (a,b) => (a.price||1e9) - (b.price||1e9),
+    name: (a,b) => a.name.localeCompare(b.name, 'ko')
+  };
+  xs = [...xs].sort(sorters[S.sort]);
+
+  $('scope').classList.toggle('hidden', !S.scopeDis);
+  if(S.scopeDis) $('scopeTxt').textContent = (S.entry ? S.entry.label + ' 관련 — ' : '') + S.scopeDis.join(', ');
+  $('count').textContent = xs.length + '개 품목';
+  $('dataInfo').textContent = Data.info;
+
+  $('grid').innerHTML = xs.map(card).join('') || '<div class="empty">조건에 맞는 약이 없습니다.</div>';
+}
+function card(it){
+  const rs = it.reasons.map(r =>
+    `<li><span class="p">${r.p}</span><span>${esc(r.sym)}${r.cond ? ` <span class="c">${esc(r.cond)}</span>` : ''}</span></li>`).join('');
+  const pf = (it.price != null && it.cost != null) ? it.price - it.cost : it.profit;
+  const pct = (pf != null && it.price) ? Math.round(pf / it.price * 100) : null;
+  return `<article class="card">
+    <div class="h"><div class="n">${esc(it.name)}</div>
+      ${it.brand==='O' ? '<span class="badge b-o">지명</span>' : ''}
+      ${it.tag ? `<span class="badge b-set">${esc(it.tag)}</span>` : ''}
+      ${it.reasons.length && it.top <= 1 ? '<span class="badge b-top">1순위</span>' : ''}</div>
+    ${it.short ? `<span class="sh" style="display:inline-block;margin-top:4px;font-size:13px;color:var(--green-ink);background:var(--green-soft);border-radius:6px;padding:1px 7px">${esc(it.short)}</span>` : ''}
+    ${rs ? `<ul class="rs">${rs}</ul>` : ''}
+    <div class="tags">${it.sys ? esc(it.sys) + ' · ' + esc(it.dis) : '미분류 (관리자 화면에서 계통을 정해 주세요)'}${it.status==='pending' ? ' · 약국 전용 품목' : ''}${it.maker ? ' · ' + esc(it.maker) : ''}</div>
+    <div class="kv">${it.ing ? `<div><span>성분</span> ${esc(it.ing)}</div>` : ''}${it.eff ? `<div><span>효능</span> ${esc(it.eff)}</div>` : ''}${it.caution ? `<div><span>주의</span> ${esc(it.caution)}</div>` : ''}</div>
+    <div class="money"><span class="sale">${it.price ? won(it.price) : '가격 미정'}</span>
+      ${S.showCost ? `<span class="cost">사입 ${it.cost!=null ? won(it.cost) : '—'}</span>${pf!=null ? `<span class="pf">수익 ${won(pf)}${pct!=null?` (${pct}%)`:''}</span>` : ''}` : ''}</div>
+  </article>`;
+}
+
+$('scopeX').onclick = () => { S.scopeDis = null; renderList(); };
+$('fBrand').onchange = e => { S.brand = e.target.value; renderList(); };
+$('fSort').onchange  = e => { S.sort = e.target.value; renderList(); };
+$('btnCost').onclick = () => {
+  S.showCost = !S.showCost;
+  $('btnCost').classList.toggle('on', S.showCost);
+  $('btnCost').setAttribute('aria-pressed', S.showCost);
+  renderList();
+  if(S.kid) chooseCase(S.kids.indexOf(S.kid));
+};
+
+/* 숫자키 1~3: 경우 선택 / Esc: 새 손님 */
+document.addEventListener('keydown', e => {
+  if(e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
+    if(e.key === 'Escape') e.target.blur();
+    return;
+  }
+  if(/^[1-3]$/.test(e.key) && S.kids.length) chooseCase(+e.key - 1);
+  if(e.key === 'Escape'){ resetConsult('위에서 <b>증상</b>을 고르거나, 환자가 한 말을 입력하세요.'); S.scopeDis=null; S.text=''; $('q').value=''; renderList(); $('q').focus(); }
+  if(e.key === '/'){ e.preventDefault(); $('q').focus(); $('q').select(); }
+});
+
+/* ── 목록 새로고침 (관리자 화면에서 고친 뒤) ── */
+$('btnReload').onclick = async () => { await loadCatalog(); toast('약 목록을 새로 불러왔습니다.'); };
+
+/* ── 보조 ── */
+function esc(s){ return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function plain(n){ return String(n||'').replace(/\(.*?\)/g,'').trim(); }
+function won(n){ return Number(n).toLocaleString() + '원'; }
+let toastT = null;
+function toast(t){ let el = document.querySelector('.toast'); if(!el){ el = document.createElement('div'); el.className='toast'; document.body.appendChild(el); }
+  el.textContent = t; clearTimeout(toastT); toastT = setTimeout(() => el.remove(), 3500); }
+
+/* ── 시작 ── */
+boot();
+</script>
+</body>
+</html>
