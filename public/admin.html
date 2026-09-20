@@ -105,6 +105,15 @@ main{ flex:1; padding:14px 16px 60px; }
   border-radius:11px; padding:12px 13px; margin-bottom:9px;
 }
 .drug-edit-card.addon{ border-left-color:var(--amber); }
+.drug-edit-card.alt{ border-left-color:var(--ink-soft); }
+
+/* ---- 코치 문장 ---- */
+.coach-panel{ background:var(--card); border:1px solid var(--line); border-left:3px solid #1D4E89; border-radius:12px; padding:12px 13px; margin:10px 0 14px; }
+.coach-panel summary{ font-size:13px; font-weight:800; cursor:pointer; color:#1D4E89; }
+.coach-panel .hint{ font-size:11.5px; color:var(--ink-soft); line-height:1.55; margin:6px 0 10px; }
+.coach-panel .mini-field{ margin-bottom:9px; }
+.coach-panel .step{ display:inline-block; font-size:10px; font-weight:800; color:#fff; background:#1D4E89; border-radius:5px; padding:1px 5px; margin-right:4px; }
+.coach-warn{ background:var(--amber-tint); color:var(--amber); border-radius:9px; padding:8px 10px; font-size:12px; margin-bottom:9px; }
 .drug-edit-card .name{ font-size:14.5px; font-weight:700; }
 .drug-edit-card .company{ font-size:11px; color:var(--ink-soft); margin-top:1px; margin-bottom:9px;}
 .drug-edit-grid{ display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
@@ -306,6 +315,7 @@ async function loadAll(){
   (priceRes.data||[]).forEach(p => priceMap[p.drug_id] = p);
   LINKS = (linkRes.data||[]).filter(l => byIdRaw(NODES, l.taxonomy_id)).map(l => ({
     id: l.id, taxonomy_id: l.taxonomy_id, tier: l.tier, priority: l.priority, note: l.note,
+    is_alt: !!l.is_alt, alt_when: l.alt_when || '',
     drug_id: l.drug_id,
     drug_name: l.drugs ? l.drugs.name : '(삭제된 약)',
     company: l.drugs ? l.drugs.company : null,
@@ -408,6 +418,10 @@ function renderTree(){
     </div>`;
   } else {
     html += `<div class="section-label">전체 계통 (탭하여 이동)</div>`;
+  }
+
+  if(currentPath.length>0 && isCoachNode(curId) && byId[curId].label !== COACH_ROOT){
+    html += coachPanelHtml(byId[curId], kids);
   }
 
   if(isLeaf){
@@ -595,8 +609,9 @@ async function submitMove(nodeId, newParentId){
 // ================= LEAF DRUG EDITOR =================
 function renderDrugEditor(nodeId){
   const recs = linksByTaxonomy[nodeId] || [];
-  const primaries = recs.filter(r=>r.tier==='primary').sort((a,b)=>a.priority-b.priority);
-  const addons = recs.filter(r=>r.tier==='add_on').sort((a,b)=>a.priority-b.priority);
+  const primaries = recs.filter(r=>!r.is_alt && r.tier==='primary').sort((a,b)=>a.priority-b.priority);
+  const addons = recs.filter(r=>!r.is_alt && r.tier==='add_on').sort((a,b)=>a.priority-b.priority);
+  const alts = recs.filter(r=>r.is_alt).sort((a,b)=>a.priority-b.priority);
   let html = '';
   if(recs.length===0){
     html += `<div class="section-label">등록된 추천약이 없습니다</div>`;
@@ -608,6 +623,10 @@ function renderDrugEditor(nodeId){
   if(addons.length){
     html += `<div class="section-label">추가·대안</div>`;
     addons.forEach(r => html += drugCardHtml(r,'addon'));
+  }
+  if(alts.length){
+    html += `<div class="section-label">음성 대안 — 권하는 말(⑦) 끝에 한 개까지 말함</div>`;
+    alts.forEach(r => html += drugCardHtml(r,'alt'));
   }
   html += `<div class="addDrugBox">
     <div style="font-size:13px;font-weight:700;margin-bottom:8px;">+ 약 추가</div>
@@ -645,6 +664,18 @@ function drugCardHtml(r, cls){
         <label>메모 (예: 택1 조건, 사용 시점 등)</label>
         <input type="text" id="note-${r.id}" value="${escapeHtml(r.note||'')}">
       </div>
+      ${isCoachNode(r.taxonomy_id) ? `
+      <div class="mini-field">
+        <label>음성 대안</label>
+        <select id="isalt-${r.id}">
+          <option value="0" ${!r.is_alt?'selected':''}>아니오 (추천약)</option>
+          <option value="1" ${r.is_alt?'selected':''}>예 (상황 따라 바꿔 권함)</option>
+        </select>
+      </div>
+      <div class="mini-field">
+        <label>대안 조건 (예: 마시는 게 편하시면)</label>
+        <input type="text" id="altwhen-${r.id}" value="${escapeHtml(r.alt_when||'')}">
+      </div>` : ''}
     </div>
     <div class="drug-edit-actions">
       <button class="btn btn-sm btn-primary" onclick="saveDrugRow('${r.id}','${r.drug_id}')">저장</button>
@@ -662,7 +693,14 @@ async function saveDrugRow(linkId, drugId){
   const purchase_price = purchaseRaw==='' ? null : parseInt(purchaseRaw);
   const sale_price = saleRaw==='' ? null : parseInt(saleRaw);
 
-  const { error: e1 } = await sb.from('taxonomy_drugs').update({tier,priority,note}).eq('id', linkId);
+  const upd = { tier, priority, note };
+  const altEl = document.getElementById('isalt-'+linkId);
+  if(altEl){
+    upd.is_alt = altEl.value === '1';
+    upd.alt_when = document.getElementById('altwhen-'+linkId).value.trim() || null;
+    if(upd.is_alt && !upd.alt_when){ toast('음성 대안은 대안 조건을 적어 주세요 (예: 마시는 게 편하시면)'); return; }
+  }
+  const { error: e1 } = await sb.from('taxonomy_drugs').update(upd).eq('id', linkId);
   if(e1){ toast('저장 실패: '+e1.message); return; }
 
   const { error: e2 } = await sb.from('pharmacy_drugs')
@@ -670,7 +708,8 @@ async function saveDrugRow(linkId, drugId){
   if(e2){ toast('가격 저장 실패: '+e2.message); return; }
 
   const link = LINKS.find(l=>l.id===linkId);
-  if(link){ link.tier=tier; link.priority=priority; link.note=note; link.purchase_price=purchase_price; link.sale_price=sale_price; }
+  if(link){ link.tier=tier; link.priority=priority; link.note=note; link.purchase_price=purchase_price; link.sale_price=sale_price;
+    if(altEl){ link.is_alt=upd.is_alt; link.alt_when=upd.alt_when||''; } }
   rebuildIndexes();
   toast('저장되었습니다');
   renderTree();
@@ -746,6 +785,53 @@ async function submitNewDrug(){
   if(error){ toast('등록 실패: '+error.message); return; }
   closeModal();
   await addDrugToLeaf(data.id, data.name, data.company);
+}
+
+// ================= 코치 문장 (음성 코치·상담 화면이 읽는 말) =================
+const COACH_ROOT = '코치(표준흐름)';
+function isCoachNode(id){
+  let n = byId[id], guard = 0;
+  while(n && n.parent_id && guard++ < 20) n = byId[n.parent_id];
+  return !!n && n.label === COACH_ROOT;
+}
+function coachPanelHtml(node, kids){
+  const entry = !!node.is_entry;
+  const syn = (node.synonyms || []).join(', ');
+  const area = (id, label, val, rows) => `<div class="mini-field full"><label>${label}</label><textarea id="${id}" rows="${rows||2}">${escapeHtml(val||'')}</textarea></div>`;
+  const warn = entry && kids.length > 3 ? `<div class="coach-warn">경우가 ${kids.length}개입니다. 한 번에 다 읽어 물으려면 3개 이하로 줄여 주세요.</div>` : '';
+  const auto = entry && kids.length ? `${node.label}. ${kids.map(k=>k.label).join(', ')}. ${['','한','두','세','네','다섯'][kids.length]||kids.length} 가지입니다.` : '';
+  return `<details class="coach-panel" open>
+    <summary>코치 문장 — ${entry ? '주호소' : '경우'} (음성 코치·상담 화면이 읽음)</summary>
+    <div class="hint">${entry
+      ? '② 약사 복기에서 이 주호소를 알아듣고 → ③ 앱이 말하고 → ④ 약사가 묻고 → ⑧ 적색기를 알려 줍니다.'
+      : '⑥ 약사 복기에서 이 경우를 알아듣고 → ⑦ 앱이 권하는 말을 하고 → ⑧ 복약지도를 알려 줍니다. 추천약을 바꾸면 권하는 말도 함께 고쳐 주세요.'}</div>
+    ${warn}
+    <div class="mini-field full"><label><span class="step">${entry ? '②' : '⑥'}</span>알아들을 말 (동의어, 쉼표로 구분)</label>
+      <input type="text" id="c_syn" value="${escapeHtml(syn)}" placeholder="예: 속쓰, 쓰려, 신물"></div>
+    ${entry
+      ? area('c_say', '<span class="step">③</span>앱이 말하는 말 (경우 안내)', node.say_text) +
+        (auto ? `<button class="btn btn-ghost btn-sm" style="margin:-4px 0 9px" onclick="document.getElementById('c_say').value=${escapeHtml(JSON.stringify(auto))}">경우 이름으로 다시 만들기</button>` : '') +
+        area('c_ask', '<span class="step">④</span>약사가 물을 말 (한 번에 다 묻기)', node.ask_text) +
+        area('c_guide', '<span class="step">⑧</span>이럴 땐 병원으로 (적색기)', node.guide_text, 3)
+      : area('c_say', '<span class="step">⑦</span>앱이 권하는 말 (약 조합 + 대안 한 개)', node.say_text) +
+        area('c_guide', '<span class="step">⑧</span>복약지도 — 이렇게 말씀하세요', node.guide_text, 3)}
+    <button class="btn btn-primary btn-sm" id="btnCoachSave" onclick="saveCoachText('${node.id}')">코치 문장 저장</button>
+  </details>`;
+}
+async function saveCoachText(id){
+  const node = byId[id];
+  const val = k => { const el = document.getElementById(k); return el ? (el.value.trim() || null) : undefined; };
+  const upd = {
+    synonyms: [...new Set(document.getElementById('c_syn').value.split(/[,，、]/).map(x=>x.trim()).filter(Boolean))],
+    say_text: val('c_say'), guide_text: val('c_guide')
+  };
+  if(node.is_entry) upd.ask_text = val('c_ask');
+  const btn = document.getElementById('btnCoachSave'); btn.disabled = true; btn.textContent = '저장 중…';
+  const { error } = await sb.from('pharmacy_taxonomy').update(upd).eq('id', id);
+  btn.disabled = false; btn.textContent = '코치 문장 저장';
+  if(error){ toast('저장하지 못했습니다: ' + error.message); return; }
+  Object.assign(node, upd);
+  toast('코치 문장을 저장했습니다');
 }
 
 // ================= 약 목록 · 세트 (DB 직접 편집) =================
