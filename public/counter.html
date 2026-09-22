@@ -601,7 +601,7 @@ function renderList(){
   $('count').textContent = xs.length + '개 품목';
   $('dataInfo').textContent = Data.info;
 
-  $('grid').innerHTML = xs.map(card).join('') || '<div class="empty">조건에 맞는 약이 없습니다.</div>';
+  $('grid').innerHTML = xs.map(it => card(it)).join('') || '<div class="empty">조건에 맞는 약이 없습니다.</div>';
 }
 function card(it, tierBadge, linkNote){
   const rs = it.reasons.map(r =>
