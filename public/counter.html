@@ -238,7 +238,7 @@ const sb = supabase.createClient('https://letwvftkomuxxbhnswyf.supabase.co',
                                  'sb_publishable_Ow_wnycgPkTubzv-sjg96w_by39lUOF');
 const db = {
   async entries(){
-    const { data } = await sb.from('pharmacy_taxonomy').select('id,label,sort_order,is_entry').eq('is_entry', true).order('sort_order');
+    const { data } = await sb.from('pharmacy_taxonomy').select('id,label,sort_order,is_entry,synonyms').eq('is_entry', true).order('sort_order');
     return data || [];
   },
   async start(text){ const { data } = await sb.rpc('coach_start', { p_utterance:text }); return data && data[0]; },
@@ -280,9 +280,17 @@ const Data = {
     }
     return null;
   },
-  setsFor(ids){                     // 추천약이 들어간 세트
+  setsFor(ids, entry){              // 추천약이 들어 있고, 세트 증상이 주호소와 맞는 세트
     const want = new Set(ids.filter(Boolean));
-    return this.sets.filter(s => (s.ids || []).some(x => want.has(x))).sort((a,b) => a.p - b.p);
+    const clean = s => String(s||'').replace(/[^가-힣A-Za-z0-9]/g,'').toLowerCase();   // 괄호 안 글자도 살림 (…(비염))
+    const keys = entry ? [entry.label, ...String(entry.label||'').split(/[·\s()/,]+/), ...(entry.synonyms || [])]
+                           .map(clean).filter(Boolean) : null;
+    const fits = s => {
+      if(!keys) return true;
+      const sym = clean(s.sym);
+      return !!sym && keys.some(k => sym.includes(k) || k.includes(sym));
+    };
+    return this.sets.filter(s => (s.ids || []).some(x => want.has(x)) && fits(s)).sort((a,b) => a.p - b.p);
   }
 };
 function norm(s){ return String(s||'').replace(/\([^)]*\)/g,'').replace(/[^가-힣A-Za-z0-9]/g,'').toLowerCase(); }
@@ -432,7 +440,7 @@ function renderRec(drugs, node, alts){
         ${a.note ? `<div class="nt">${esc(a.note)}</div>` : ''}</div>
       <div class="pr">${priceCell(a.sale_price, it)}</div></div>`;
   }).join('');
-  const sets = Data.setsFor(drugs.map(d => d.drug_id)).slice(0,2);
+  const sets = Data.setsFor(drugs.map(d => d.drug_id), S.entry).slice(0,2);
   const setRows = sets.map(s => `<div class="set"><b>${esc(s.name)}</b> — ${s.items.map(esc).join(' + ')}<div class="why">${esc(s.why)}</div></div>`).join('');
   const guide = node.guide_text, red = S.entryNode.guide_text;
 
