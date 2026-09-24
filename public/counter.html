@@ -124,23 +124,23 @@
   </header>
 
   <main>
-    <div class="box" style="margin-bottom:14px">
-      <h2 id="symHead" style="cursor:pointer;display:flex;align-items:center;gap:6px">
-        <span id="symCaret">▾</span><span>증상</span><span id="symPick" style="color:var(--green-ink)"></span>
-      </h2>
-      <input type="search" id="symq" placeholder="증상 찾기 — 예: 무좀" style="max-width:280px;margin-bottom:9px">
-      <div class="chips" id="symChips" style="max-height:190px;overflow:auto"></div>
-    </div>
-
     <div class="row" style="margin-bottom:14px">
       <div class="box">
         <h2>① 물어볼 말</h2>
-        <div id="askBody"><div class="empty">위에서 증상을 고르거나 환자 말을 입력하세요.</div></div>
+        <div id="askBody"><div class="empty">환자 말을 위에 입력하거나, 아래 <b>증상</b>에서 고르세요.</div></div>
       </div>
       <div class="box">
         <h2>② 권하는 약</h2>
         <div id="recBody"><div class="empty">경우를 고르면 약이 나옵니다.</div></div>
       </div>
+    </div>
+
+    <div class="box" style="margin-bottom:14px">
+      <h2 id="symHead" style="cursor:pointer;display:flex;align-items:center;gap:6px">
+        <span id="symCaret">▸</span><span>증상</span><span id="symPick" style="color:var(--green-ink)"></span>
+      </h2>
+      <input type="search" id="symq" placeholder="증상 찾기 — 예: 무좀" style="max-width:280px;margin-bottom:9px">
+      <div class="chips" id="symChips" style="max-height:190px;overflow:auto"></div>
     </div>
 
     <div class="box">
@@ -171,7 +171,7 @@ const norm = s => String(s || '').replace(/[^가-힣A-Za-z0-9]/g, '').toLowerCas
 const S = {
   symptoms: [], items: [], byDrug: {},
   sym: null, kase: null, showCost: false,
-  dq: '', named: null, updated: null, symq: '', symOpen: true, drugOpen: false
+  dq: '', named: null, updated: null, symq: '', symOpen: false, drugOpen: false
 };
 
 /* ── 데이터 ── */
@@ -197,7 +197,8 @@ function renderSymptoms(){
   $('symChips').classList.toggle('hidden', !S.symOpen);
   $('symq').classList.toggle('hidden', !S.symOpen);
   $('symCaret').textContent = S.symOpen ? '▾' : '▸';
-  $('symPick').textContent = S.sym ? '— ' + S.sym.name : (S.symOpen ? '' : '— 눌러서 펼치기');
+  $('symPick').textContent = S.sym ? '— ' + S.sym.name
+    : (S.symOpen ? '' : `— ${withFlow.length}개, 눌러서 펼치기`);
 }
 
 /* ── 찾기 ── */
@@ -369,8 +370,8 @@ $('btnCost').onclick = () => {
   renderList(); if(S.kase) renderRec(S.kase);
 };
 function resetAll(){
-  S.sym = null; S.kase = null; S.named = null; S.dq = ''; S.symOpen = true; S.drugOpen = false; $('q').value = ''; $('dq').value = '';
-  $('askBody').innerHTML = '<div class="empty">위에서 증상을 고르거나 환자 말을 입력하세요.</div>';
+  S.sym = null; S.kase = null; S.named = null; S.dq = ''; S.symOpen = false; S.drugOpen = false; $('q').value = ''; $('dq').value = '';
+  $('askBody').innerHTML = '<div class="empty">환자 말을 위에 입력하거나, 아래 <b>증상</b>에서 고르세요.</div>';
   $('recBody').innerHTML = '<div class="empty">경우를 고르면 약이 나옵니다.</div>';
   renderSymptoms(); renderList(); $('q').focus();
 }
