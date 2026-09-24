@@ -119,8 +119,6 @@
     <button id="btnFind">찾기</button>
     <span class="sp"></span>
     <button id="btnCost">원가</button>
-    <button id="btnReload">새로고침</button>
-    <button id="btnReset">새 손님</button>
     <span class="who" id="who"></span>
     <button id="btnLogout">로그아웃</button>
   </header>
@@ -359,7 +357,10 @@ $('askBody').onclick = e => {
   if(s){ const sym = S.symptoms.find(x => x.id === s.dataset.sym); if(sym) chooseSymptom(sym); }
 };
 $('btnFind').onclick = doFind;
-$('q').onkeydown = e => { if(e.key === 'Enter') doFind(); };
+$('q').onkeydown = e => {
+  if(e.key !== 'Enter') return;
+  if($('q').value.trim()) doFind(); else resetAll();   // 빈 칸에서 엔터 = 새 손님
+};
 $('drugHead').onclick = () => { S.drugOpen = !S.drugOpen; renderList(); };
 $('dq').oninput = e => { S.dq = e.target.value; renderList(); };
 $('btnCost').onclick = () => {
@@ -367,18 +368,29 @@ $('btnCost').onclick = () => {
   $('btnCost').textContent = S.showCost ? '원가 숨기기' : '원가';
   renderList(); if(S.kase) renderRec(S.kase);
 };
-$('btnReload').onclick = () => loadAll();
-$('btnReset').onclick = () => {
+function resetAll(){
   S.sym = null; S.kase = null; S.named = null; S.dq = ''; S.symOpen = true; S.drugOpen = false; $('q').value = ''; $('dq').value = '';
   $('askBody').innerHTML = '<div class="empty">위에서 증상을 고르거나 환자 말을 입력하세요.</div>';
   $('recBody').innerHTML = '<div class="empty">경우를 고르면 약이 나옵니다.</div>';
   renderSymptoms(); renderList(); $('q').focus();
-};
+}
 document.addEventListener('keydown', e => {
   if(e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
   if(e.key === '/'){ e.preventDefault(); $('q').focus(); $('q').select(); return; }
   if(/^[1-9]$/.test(e.key) && S.sym) chooseCase(Number(e.key) - 1);
 });
+document.addEventListener('keydown', e => { if(e.key === 'Escape'){ resetAll(); } });
+
+/* 관리자에서 고친 내용이 바로 보이도록, 화면으로 돌아오면 다시 읽는다 */
+let lastLoad = Date.now();
+async function refreshIfStale(){
+  if(document.hidden || $('app').classList.contains('hidden')) return;
+  if(Date.now() - lastLoad < 8000) return;
+  await loadAll(); lastLoad = Date.now();
+  if(S.sym){ const again = S.symptoms.find(x => x.id === S.sym.id); if(again){ S.sym = again; renderAsk(); } }
+}
+document.addEventListener('visibilitychange', refreshIfStale);
+window.addEventListener('focus', refreshIfStale);
 
 /* ── 로그인 ── */
 function show(w){ $('login').classList.toggle('hidden', w !== 'login'); $('app').classList.toggle('hidden', w !== 'app'); }
