@@ -186,7 +186,8 @@ function symStats(s){
 function renderSymList(){
   const q = S.sq.trim().toLowerCase();
   const xs = S.symptoms.filter(s => !q
-    || s.name.toLowerCase().includes(q) || (s.syn || []).some(x => x.toLowerCase().includes(q)));
+    || s.name.toLowerCase().includes(q) || (s.syn || []).some(x => x.toLowerCase().includes(q)))
+    .sort((a,b) => a.name.localeCompare(b.name, 'ko'));
   $('symList').innerHTML = xs.map(s => {
     const st = symStats(s);
     return `<div class="item${S.sym && S.sym.id === s.id ? ' on' : ''}" data-sym="${s.id}">
@@ -284,7 +285,7 @@ function openSymModal(s){
 /* ── 약 행 모달 ── */
 function openLineModal(line, presetCase, presetDrug){
   const isNew = !line;
-  const symOpts = S.symptoms.map(x =>
+  const symOpts = [...S.symptoms].sort((a,b) => a.name.localeCompare(b.name,'ko')).map(x =>
     `<option value="${x.id}" ${(line ? line.sym_id : (S.sym && S.sym.id)) === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('');
   modal(`<h3>${isNew ? '약 넣기' : '약 행 고치기'}</h3>
     ${isNew ? `<div class="f"><label>약 찾기</label>
