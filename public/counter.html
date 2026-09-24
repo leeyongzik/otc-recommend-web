@@ -18,135 +18,87 @@
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
   body{background:var(--paper);color:var(--ink);
-    font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
-    font-size:16px;line-height:1.55;-webkit-text-size-adjust:100%}
-  button{font:inherit;color:inherit}
+       font-family:Pretendard Variable,Pretendard,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
+       font-size:15px;line-height:1.55}
   .hidden{display:none!important}
-  :focus-visible{outline:3px solid #9CC9B6;outline-offset:2px}
-
-  /* ── 상단 바 ── */
-  .top{position:sticky;top:0;z-index:5;background:var(--ink);color:#fff}
-  .top-in{max-width:1400px;margin:0 auto;padding:10px 20px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-  .top h1{margin:0;font-size:18px;font-weight:700;letter-spacing:-.02em}
-  .top .who{font-size:13px;opacity:.7}
-  .top .sp{flex:1}
-  .tbtn{background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff;border-radius:9px;padding:6px 12px;font-size:14px;cursor:pointer}
-  .tbtn.on{background:#fff;color:var(--ink);border-color:#fff}
-  .search{flex:1 1 360px;min-width:220px;display:flex;gap:8px}
-  .search input{flex:1;min-width:0;font:inherit;font-size:17px;padding:9px 14px;border-radius:10px;border:0;background:#fff;color:var(--ink)}
-  .search button{border:0;border-radius:10px;padding:9px 16px;background:var(--green);color:#fff;font-weight:600;cursor:pointer}
-
-  .wrap{max-width:1400px;margin:0 auto;padding:16px 20px 60px}
-
-  /* ── 주호소 줄 ── */
-  .entries{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
-  .entry{background:var(--card);border:1px solid var(--line);border-radius:999px;padding:8px 16px;font-size:16px;font-weight:600;cursor:pointer}
-  .entry:hover{border-color:var(--green)}
-  .entry.on{background:var(--green);border-color:var(--green);color:#fff}
-  .entry .k{display:inline-block;min-width:18px;margin-right:6px;font-size:12px;opacity:.55;font-weight:500}
-
-  /* ── 상담 3칸 ── */
-  .consult{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:14px;align-items:start}
-  .panel{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px}
-  .panel h2{margin:0 0 10px;font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.02em}
-  .ask{font-size:22px;font-weight:700;letter-spacing:-.02em;line-height:1.5;color:var(--green-ink);background:var(--green-soft);border-radius:12px;padding:14px 16px}
-  .ask small{display:block;font-size:12px;font-weight:600;color:#3C7761;margin-bottom:4px;letter-spacing:0}
-  .cases{display:grid;gap:8px;margin-top:12px}
-  .case{display:flex;align-items:center;gap:12px;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 14px;font-size:18px;font-weight:600;cursor:pointer}
+  header{position:sticky;top:0;z-index:20;background:var(--green);color:#fff;padding:10px 18px;
+         display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  header h1{font-size:15px;margin:0;font-weight:700;letter-spacing:-.01em}
+  header .sp{flex:1}
+  header input{flex:1;min-width:250px;max-width:560px;font:inherit;font-size:15px;padding:9px 13px;
+               border:0;border-radius:10px}
+  header button{font:inherit;font-size:13px;background:rgba(255,255,255,.16);color:#fff;border:0;
+                border-radius:8px;padding:7px 11px;cursor:pointer}
+  header button:hover{background:rgba(255,255,255,.28)}
+  header .who{font-size:12.5px;opacity:.85}
+  main{max-width:1180px;margin:0 auto;padding:16px 18px 60px}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:900px){ .row{grid-template-columns:1fr} header input{min-width:180px} }
+  .box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 15px}
+  .box h2{font-size:12px;margin:0 0 10px;color:var(--muted);font-weight:700;letter-spacing:.02em}
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{font:inherit;font-size:13.5px;border:1px solid var(--line);background:var(--card);color:var(--ink);
+        border-radius:999px;padding:6px 12px;cursor:pointer}
+  .chip:hover{border-color:var(--green)}
+  .chip.on{background:var(--green);border-color:var(--green);color:#fff;font-weight:600}
+  .chip small{opacity:.6;margin-left:4px;font-size:11.5px}
+  .ask{background:var(--green-soft);border-radius:10px;padding:11px 13px;margin-bottom:11px}
+  .ask small{display:block;font-size:11.5px;color:var(--green-ink);opacity:.8;margin-bottom:3px}
+  .ask b{font-size:17px;font-weight:700;color:var(--green-ink)}
+  .cases{display:flex;flex-wrap:wrap;gap:8px}
+  .case{font:inherit;font-size:15px;border:1px solid var(--line);background:var(--card);color:var(--ink);
+        border-radius:10px;padding:9px 13px;cursor:pointer;display:flex;align-items:center;gap:8px}
   .case:hover{border-color:var(--green)}
-  .case.on{border-color:var(--green);box-shadow:inset 0 0 0 1px var(--green);background:#F6FBF8}
-  .case .key{flex:none;width:26px;height:26px;border-radius:7px;background:var(--paper);display:grid;place-items:center;font-size:13px;color:var(--muted)}
-  .case.on .key{background:var(--green);color:#fff}
-  .recap{margin-top:12px;font-size:14px;color:var(--muted)}
-  .recap b{color:var(--ink)}
-  .empty{color:var(--muted);font-size:15px;padding:18px 4px}
-  .empty b{color:var(--ink)}
-
-  .say{font-size:17px;font-weight:600;line-height:1.55;padding:12px 14px;border-radius:12px;background:var(--blue-soft);color:var(--blue);margin-bottom:12px}
-  .say small{display:block;font-size:12px;opacity:.8;margin-bottom:2px}
-  .drug{display:flex;gap:12px;align-items:flex-start;padding:12px 0;border-top:1px solid var(--line)}
-  .drug:first-of-type{border-top:0}
-  .tier{flex:none;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;margin-top:4px;background:var(--green-soft);color:var(--green-ink)}
-  .tier.add{background:var(--amber-soft);color:var(--amber)}
-  .tier.alt{background:var(--paper);color:var(--muted)}
+  .case.on{background:var(--green);border-color:var(--green);color:#fff;font-weight:600}
+  .case .key{font-size:11px;background:rgba(0,0,0,.08);border-radius:5px;padding:1px 5px}
+  .case.on .key{background:rgba(255,255,255,.22)}
+  .recap{margin-top:10px;font-size:14px;color:var(--muted)}
+  .drug{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
+  .drug:first-child{border-top:0}
+  .tier{flex:0 0 auto;font-size:11.5px;font-weight:700;color:#fff;background:var(--green);
+        border-radius:6px;padding:2px 7px;margin-top:3px}
+  .tier.add{background:var(--blue)} .tier.alt{background:var(--amber)} .tier.none{background:var(--danger)}
   .drug .body{flex:1;min-width:0}
-  .drug .nm{font-size:19px;font-weight:700;letter-spacing:-.01em}
-  .drug .nt{font-size:14px;color:var(--muted)}
-  .drug .sh{display:inline-block;margin-top:3px;font-size:13px;color:var(--green-ink);background:var(--green-soft);border-radius:6px;padding:1px 7px}
-  .drug .pr{flex:none;text-align:right;font-weight:600;font-size:16px;white-space:nowrap}
-  .drug .pr .c{display:block;font-size:12px;font-weight:500;color:var(--muted)}
-  .when{font-size:14px;color:var(--muted);margin-bottom:2px}
-  .sub{margin-top:14px;font-size:13px;font-weight:600;color:var(--muted)}
-  .guide{margin-top:8px;font-size:16px;line-height:1.6;padding:12px 14px;border:1px solid var(--line);border-radius:12px}
-  .red{margin-top:8px;font-size:15px;line-height:1.6;padding:12px 14px;border-radius:12px;background:var(--danger-soft);color:var(--danger)}
-  .red b{display:block;font-size:12px;margin-bottom:2px}
-  .set{margin-top:8px;padding:10px 14px;border-radius:12px;border:1px dashed var(--line);font-size:15px}
-  .set b{font-weight:700}
-  .set .why{font-size:13px;color:var(--muted);margin-top:2px}
-
-  /* ── 약 목록 ── */
-  .listhead{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:26px 0 10px}
-  .listhead h3{margin:0;font-size:17px;font-weight:700}
-  .scope{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;background:var(--green-soft);color:var(--green-ink);border-radius:999px;padding:4px 6px 4px 12px}
-  .scope button{border:0;background:rgba(0,0,0,.08);border-radius:999px;width:20px;height:20px;cursor:pointer;line-height:1}
-  .chips{display:flex;flex-wrap:wrap;gap:6px}
-  .chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:5px 12px;font-size:14px;cursor:pointer}
-  .chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
-  .tools{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0}
-  .tools select{font:inherit;font-size:14px;padding:6px 10px;border-radius:9px;border:1px solid var(--line);background:var(--card)}
-  .count{font-size:13px;color:var(--muted);margin-left:auto}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:10px}
-  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
-  .card .h{display:flex;align-items:flex-start;gap:8px}
-  .card .h .n{font-size:17px;font-weight:700;flex:1;min-width:0}
-  .badge{flex:none;font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px}
-  .b-top{background:var(--blue);color:#fff}
-  .b-o{background:var(--danger-soft);color:var(--danger)}
-  .b-set{background:var(--amber-soft);color:var(--amber)}
-  .rs{margin:6px 0 0;padding:0;list-style:none}
-  .rs li{font-size:14px;color:var(--blue);font-weight:600;display:flex;gap:6px}
-  .rs li .p{flex:none;width:18px;height:18px;border-radius:50%;background:var(--blue-soft);font-size:11px;display:grid;place-items:center;margin-top:2px}
-  .rs li .c{color:var(--muted);font-weight:500}
-  .tags{margin-top:6px;font-size:12px;color:var(--muted)}
-  .kv{margin-top:6px;font-size:13px;line-height:1.5}
-  .kv span{color:var(--muted);display:inline-block;min-width:34px}
-  .money{margin-top:8px;display:flex;gap:14px;font-size:14px;align-items:baseline}
-  .money .sale{font-weight:700;font-size:15px}
-  .money .cost{color:var(--muted)}
-  .money .pf{color:var(--green);font-weight:600}
-
-  /* ── 아래쪽 탭 · 증상 트리 ── */
-  .btabs{display:flex;gap:4px;background:#E4E9E6;border-radius:11px;padding:3px}
-  .btab{border:0;background:transparent;border-radius:9px;padding:6px 16px;font-size:15px;font-weight:700;color:var(--muted);cursor:pointer}
-  .btab.on{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
-  .crumbs{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:4px 0 10px;font-size:14px}
-  .crumbs button{border:0;background:none;padding:2px 4px;font-size:14px;color:var(--muted);cursor:pointer}
-  .crumbs button.cur{color:var(--ink);font-weight:700}
-  .crumbs .sep{color:#B5BDB9}
-  .tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin-bottom:12px}
-  .tnode{text-align:left;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:15.5px;font-weight:600;cursor:pointer;line-height:1.4}
-  .tnode:hover{border-color:var(--green)}
-  .tnode small{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-top:2px}
-  .tnode.coach{border-style:dashed;border-color:#9DB6D6;background:var(--blue-soft)}
-  .tnode.coach small{color:var(--blue);font-weight:600}
-  .tnode .ref{display:inline-block;font-size:11px;font-weight:700;color:var(--danger);background:var(--danger-soft);border-radius:6px;padding:0 6px;margin-left:4px;vertical-align:middle}
-  .thit{display:block;width:100%;text-align:left;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:9px 13px;margin-bottom:6px;font-size:15px;cursor:pointer}
-  .thit:hover{border-color:var(--green)}
-  .thit small{color:var(--muted);font-size:12.5px}
-  .tsub{font-size:13px;font-weight:600;color:var(--muted);margin:14px 0 8px}
-  .tier-badge{flex:none;font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;background:var(--green-soft);color:var(--green-ink)}
-  .tier-badge.add{background:var(--amber-soft);color:var(--amber)}
-
-  /* ── 로그인 ── */
-  .login{max-width:360px;margin:14vh auto;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:24px}
+  .drug .nm{font-size:17px;font-weight:700}
+  .drug .nt{font-size:13.5px;color:var(--muted)}
+  .drug .when{font-size:12.5px;color:var(--amber)}
+  .drug .sh{display:inline-block;font-size:12.5px;color:var(--green-ink);background:var(--green-soft);
+            border-radius:6px;padding:1px 7px;margin-top:3px}
+  .drug .pr{flex:0 0 auto;text-align:right;font-size:15px;font-weight:700}
+  .drug .pr .c{display:block;font-size:11.5px;font-weight:400;color:var(--muted)}
+  .say{margin-top:12px;background:var(--green-soft);border-radius:10px;padding:11px 13px;font-size:16px;
+       font-weight:600;color:var(--green-ink)}
+  .guide{margin-top:9px;font-size:14px;color:var(--muted);white-space:pre-wrap}
+  .red{margin-top:9px;background:var(--danger-soft);color:var(--danger);border-radius:10px;
+       padding:9px 12px;font-size:13.5px;white-space:pre-wrap}
+  .named{background:var(--amber-soft);border:1px solid #E7D4AE;border-radius:10px;padding:11px 13px;
+         margin-bottom:11px;font-size:14px}
+  .named b{font-size:16px}
+  .empty{color:var(--muted);font-size:14px;padding:6px 0}
+  .tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+  .tools select,.tools input{font:inherit;font-size:13.5px;padding:7px 9px;border:1px solid var(--line);
+                             border-radius:9px;background:var(--card)}
+  .note{font-size:12px;color:var(--muted)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+  .card{border:1px solid var(--line);border-radius:12px;padding:11px 12px;background:var(--card)}
+  .card .n{font-size:15.5px;font-weight:700}
+  .card .tags{font-size:12px;color:var(--muted);margin-top:3px}
+  .card .kv{font-size:12.5px;color:var(--muted);margin-top:6px}
+  .card .kv span{color:var(--ink);font-weight:600;margin-right:4px}
+  .card .money{margin-top:8px;font-size:15px;font-weight:700}
+  .card .money .cost{font-size:12px;font-weight:400;color:var(--muted);margin-left:7px}
+  .card ul{margin:7px 0 0;padding:0;list-style:none}
+  .card li{font-size:12.5px;color:var(--muted);display:flex;gap:6px}
+  .card li .p{background:var(--green-soft);color:var(--green-ink);border-radius:5px;padding:0 5px;font-size:11px}
+  .badge{font-size:11px;border-radius:5px;padding:1px 6px;margin-left:5px;vertical-align:2px}
+  .b-o{background:var(--amber-soft);color:var(--amber)} .b-x{background:var(--green-soft);color:var(--green-ink)}
+  .login{max-width:360px;margin:14vh auto;background:var(--card);border:1px solid var(--line);
+         border-radius:var(--r);padding:24px}
   .login h1{font-size:20px;margin:0 0 4px}.login p{margin:0 0 16px;font-size:14px;color:var(--muted)}
   .login input{width:100%;margin-bottom:10px;font:inherit;padding:11px 12px;border:1px solid var(--line);border-radius:10px}
-  .login button{width:100%;border:0;border-radius:10px;padding:12px;background:var(--green);color:#fff;font-weight:600;cursor:pointer}
-  .err{color:var(--danger);font-size:14px;margin-top:10px}
-  .note{font-size:13px;color:var(--muted);margin-top:6px}
-  .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:#fff;padding:10px 16px;border-radius:10px;font-size:14px;z-index:9}
-
-  @media (max-width:900px){ .consult{grid-template-columns:1fr} .ask{font-size:19px} }
+  .login button{width:100%;border:0;border-radius:10px;padding:12px;background:var(--green);color:#fff;
+                font-weight:600;cursor:pointer}
+  .err{color:var(--danger);font-size:13px;min-height:18px}
 </style>
 </head>
 <body>
@@ -154,513 +106,311 @@
 <div id="login" class="login hidden">
   <h1>상담 화면</h1>
   <p>약국 계정으로 로그인하세요.</p>
-  <input id="email" type="email" placeholder="이메일" autocomplete="username">
-  <input id="pw" type="password" placeholder="비밀번호" autocomplete="current-password">
+  <input type="email" id="email" placeholder="이메일" autocomplete="username">
+  <input type="password" id="pw" placeholder="비밀번호" autocomplete="current-password">
   <button id="btnLogin">로그인</button>
   <div id="loginErr" class="err"></div>
 </div>
 
 <div id="app" class="hidden">
-  <div class="top"><div class="top-in">
-    <h1>상담 화면</h1><span class="who" id="who"></span>
-    <form class="search" id="searchForm" autocomplete="off">
-      <input id="q" type="text" placeholder="환자가 한 말 — 예: 속이 쓰려요, 무좀, 파모티딘">
-      <button type="submit">찾기</button>
-    </form>
+  <header>
+    <h1>상담 화면</h1>
+    <input id="q" placeholder="환자가 한 말 또는 약 이름 — 예: 속이 쓰려요, 파모티딘" autocomplete="off">
+    <button id="btnFind">찾기</button>
     <span class="sp"></span>
-    <button class="tbtn" id="btnCost" aria-pressed="false">원가</button>
-    <button class="tbtn" id="btnReload" title="관리자 화면에서 약을 고친 뒤 누르세요">목록 새로고침</button>
-    <button class="tbtn" id="btnLogout">로그아웃</button>
-  </div></div>
+    <button id="btnCost">원가</button>
+    <button id="btnReload">새로고침</button>
+    <button id="btnReset">새 손님</button>
+    <span class="who" id="who"></span>
+    <button id="btnLogout">로그아웃</button>
+  </header>
 
-  <main class="wrap">
-    <div class="entries" id="entries"></div>
+  <main>
+    <div class="box" style="margin-bottom:14px">
+      <h2>증상</h2>
+      <div class="chips" id="symChips"></div>
+    </div>
 
-    <section class="consult">
-      <div class="panel" id="pAsk">
+    <div class="row" style="margin-bottom:14px">
+      <div class="box">
         <h2>① 물어볼 말</h2>
-        <div id="askBody" class="empty">위에서 <b>증상</b>을 고르거나, 환자가 한 말을 입력하세요.<br>숫자키 <b>1~9</b>로 경우를 고를 수 있습니다.</div>
+        <div id="askBody"><div class="empty">위에서 증상을 고르거나 환자 말을 입력하세요.</div></div>
       </div>
-      <div class="panel" id="pRec">
-        <h2>② 추천 · 복약지도</h2>
-        <div id="recBody" class="empty">경우를 고르면 추천약과 복약지도가 여기에 나옵니다.</div>
+      <div class="box">
+        <h2>② 권하는 약</h2>
+        <div id="recBody"><div class="empty">경우를 고르면 약이 나옵니다.</div></div>
       </div>
-    </section>
-
-    <div class="listhead">
-      <div class="btabs" role="tablist">
-        <button class="btab on" data-b="tree" role="tab">증상 트리</button>
-        <button class="btab" data-b="drugs" role="tab">약 목록</button>
-      </div>
-      <span id="scope" class="scope hidden"><span id="scopeTxt"></span><button id="scopeX" aria-label="범위 해제">×</button></span>
-      <span class="count" id="count"></span>
     </div>
 
-    <div id="treeBox">
-      <div class="crumbs" id="crumbs"></div>
-      <div id="treeBody"></div>
-    </div>
-
-    <div id="drugBox" class="hidden">
-    <div class="chips" id="sysChips"></div>
-    <div class="tools">
-      <select id="fBrand">
-        <option value="">지명구매 전체</option>
-        <option value="X">권매(X)만</option>
-        <option value="O">지명(O)만</option>
-      </select>
-      <select id="fSort">
-        <option value="name">이름 순</option>
-        <option value="p">우선순위 순</option>
-        <option value="profit">수익 높은 순</option>
-        <option value="price">판매가 낮은 순</option>
-      </select>
-      <span class="note" id="dataInfo"></span>
-    </div>
-    <div class="grid" id="grid"></div>
+    <div class="box">
+      <h2>약 목록</h2>
+      <div class="tools">
+        <input type="search" id="dq" placeholder="약 이름·성분·증상 검색" style="min-width:220px">
+        <select id="dsys"><option value="">계통 전체</option></select>
+        <select id="dbrand">
+          <option value="">지명·상담 전체</option>
+          <option value="X">상담품목만</option>
+          <option value="O">지명품목만</option>
+        </select>
+        <select id="dsort">
+          <option value="name">이름 순</option>
+          <option value="price">판매가 낮은 순</option>
+          <option value="profit">수익 높은 순</option>
+        </select>
+        <span class="note" id="dinfo"></span>
+      </div>
+      <div class="note" id="dcount" style="margin-bottom:8px"></div>
+      <div class="grid" id="dgrid"></div>
     </div>
   </main>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <script>
-/* =========================================================================
-   상담 화면 (counter.html) — 노트북용
-   · 위: 음성 코치와 같은 DB·같은 함수(coach_*)로 ①물어볼 말 → ②추천·복약지도
-   · 아래: DB(counter_catalog)에서 읽는 약 목록 — 권매사유·세트·짧은 문구 포함
-     약 데이터는 관리자 화면(약 목록·세트 탭)에서만 고칩니다 (이 화면은 읽기만 함)
-   나중에 React로 옮기기 쉽게 기능별로 나눠 둠:
-     [DB] db.*   [데이터] Data.*   [상태] S   [화면] render*   [이벤트] on*
-   ========================================================================= */
-
-/* ── [DB] Supabase ── */
 const sb = supabase.createClient('https://letwvftkomuxxbhnswyf.supabase.co',
                                  'sb_publishable_Ow_wnycgPkTubzv-sjg96w_by39lUOF');
-const db = {
-  async entries(){
-    const { data } = await sb.from('pharmacy_taxonomy').select('id,label,sort_order,is_entry,synonyms').eq('is_entry', true).order('sort_order');
-    return data || [];
-  },
-  async start(text){ const { data } = await sb.rpc('coach_start', { p_utterance:text }); return data && data[0]; },
-  async children(id){ const { data } = await sb.rpc('coach_children', { p_node_id:id }); return Array.isArray(data) ? data : []; },
-  async pick(parent, label){ const { data } = await sb.rpc('coach_pick', { p_parent_id:parent, p_utterance:label }); return data && data[0]; },
-  async node(id){ const { data } = await sb.rpc('coach_node', { p_node_id:id }); return data || {}; },
-  async alts(id){ const { data } = await sb.rpc('coach_alts', { p_node_id:id }); return Array.isArray(data) ? data : []; },
-  async tree(){
-    const { data, error } = await sb.rpc('counter_tree');
-    if(error) throw error;
-    return data || { nodes:[], links:[] };
-  },
-  async catalog(){
-    const { data, error } = await sb.rpc('counter_catalog');
-    if(error) throw error;
-    return data || { items:[], sets:[] };
-  },
-  async miss(parent, text){ try{ await sb.from('coach_misses').insert({ pharmacy_id:S.pharmacyId, parent_id:parent, utterance:text }); }catch(_){} }
-};
-
-/* ── [데이터] DB 약 목록 ── */
-const Data = {
-  items:[], sets:[], info:'',
-  load(obj){
-    this.items = (obj.items || []).map(i => ({ ...i, profit:(i.price != null && i.cost != null) ? i.price - i.cost : null }));
-    this.sets = obj.sets || [];
-    this.byId = new Map(this.items.map(i => [i.id, i]));
-    this.byNorm = new Map(this.items.map(i => [norm(i.name), i]));
-    const up = obj.updated ? new Date(obj.updated) : null;
-    this.info = `DB · ${this.items.length}개 품목 · 세트 ${this.sets.length}개` +
-                (up ? ` · ${up.getMonth()+1}/${up.getDate()} ${String(up.getHours()).padStart(2,'0')}:${String(up.getMinutes()).padStart(2,'0')} 반영` : '');
-  },
-  find(name, id){                   // 추천약 → 약 목록 (id 우선, 없으면 이름 표기 차이 흡수)
-    if(id && this.byId.has(id)) return this.byId.get(id);
-    const k = norm(name); if(!k) return null;
-    if(this.byNorm.has(k)) return this.byNorm.get(k);
-    for(const [nk, it] of this.byNorm){
-      if(nk.length >= 3 && k.length >= 3 && (nk.startsWith(k) || k.startsWith(nk))) return it;
-    }
-    return null;
-  },
-  setsFor(ids, entry){              // 추천약이 들어 있고, 세트 증상이 주호소와 맞는 세트
-    const want = new Set(ids.filter(Boolean));
-    const clean = s => String(s||'').replace(/[^가-힣A-Za-z0-9]/g,'').toLowerCase();   // 괄호 안 글자도 살림 (…(비염))
-    const keys = entry ? [entry.label, ...String(entry.label||'').split(/[·\s()/,]+/), ...(entry.synonyms || [])]
-                           .map(clean).filter(Boolean) : null;
-    const fits = s => {
-      if(!keys) return true;
-      const sym = clean(s.sym);
-      return !!sym && keys.some(k => sym.includes(k) || k.includes(sym));
-    };
-    return this.sets.filter(s => (s.ids || []).some(x => want.has(x)) && fits(s)).sort((a,b) => a.p - b.p);
-  }
-};
-function norm(s){ return String(s||'').replace(/\([^)]*\)/g,'').replace(/[^가-힣A-Za-z0-9]/g,'').toLowerCase(); }
-
-/* 주호소(DB) → 약 목록 질환 이름 */
-const ENTRY_TO_DIS = {
-  '두통':['해열·진통 (두통·치통·생리통)'], '생리통':['해열·진통 (두통·치통·생리통)'],
-  '근육통·관절통':['근육통·관절통·신경통','멍·부기·타박상'], '설사':['설사'],
-  '속쓰림':['속쓰림·위산과다·위염'], '소화불량·체함':['소화불량·체함','복통·위경련·과민성대장'],
-  '목 아픔':['인후통·목감기'], '콧물·코막힘(비염)':['코감기·알레르기 비염'],
-  '기침·가래':['기침·가래'], '종합감기':['종합감기']
-};
-
-/* ── [상태] ── */
-const S = {
-  pharmacyId:null, entries:[], entry:null, entryNode:{}, kids:[], kid:null,
-  showCost:false, sys:'', brand:'', sort:'name', text:'', scopeDis:null,
-  btab:'tree', tpath:[], tq:''          // 아래쪽 탭 · 증상 트리 경로 · 트리 검색어
-};
-
-/* ── 인증 ── */
 const $ = id => document.getElementById(id);
-async function boot(){
-  const { data:{ session } } = await sb.auth.getSession();
-  if(!session){ show('login'); return; }
-  S.pharmacyId = session.user.id;
-  const { data } = await sb.from('pharmacies').select('name').eq('id', session.user.id).maybeSingle();
-  $('who').textContent = data?.name || session.user.email;
-  show('app');
-  S.entries = await db.entries();
-  renderEntries();
-  await Promise.all([loadCatalog(), loadTree()]);
-  $('q').focus();
-}
-async function loadCatalog(){
-  $('grid').innerHTML = '<div class="empty">약 목록을 불러오는 중…</div>';
-  try{ Data.load(await db.catalog()); }
-  catch(err){ Data.load({}); Data.info = '약 목록을 불러오지 못했습니다 — 목록 새로고침을 눌러 주세요'; }
-  renderList(); renderTreeBox();
-}
-function show(w){ $('login').classList.toggle('hidden', w!=='login'); $('app').classList.toggle('hidden', w!=='app'); }
-$('btnLogin').onclick = async () => {
-  $('loginErr').textContent = '';
-  const { error } = await sb.auth.signInWithPassword({ email:$('email').value.trim(), password:$('pw').value });
-  if(error){ $('loginErr').textContent = '로그인하지 못했습니다. 이메일과 비밀번호를 확인하세요.'; return; }
-  boot();
-};
-$('pw').addEventListener('keydown', e => { if(e.key==='Enter') $('btnLogin').click(); });
-$('btnLogout').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const won = n => n == null ? '' : Number(n).toLocaleString('ko-KR') + '원';
+const norm = s => String(s || '').replace(/[^가-힣A-Za-z0-9]/g, '').toLowerCase();
 
-/* ── [화면] 주호소 줄 ── */
-function renderEntries(){
-  $('entries').innerHTML = S.entries.map((e,i) =>
-    `<button class="entry${S.entry && S.entry.id===e.id ? ' on':''}" data-id="${e.id}">${esc(e.label)}</button>`).join('');
-  $('entries').querySelectorAll('.entry').forEach(b => b.onclick = () => chooseEntry(S.entries.find(e => e.id===b.dataset.id)));
-}
-
-/* ── [이벤트] 입력 → 주호소 찾기 ── */
-$('searchForm').onsubmit = async ev => {
-  ev.preventDefault();
-  const t = $('q').value.trim();
-  S.text = t;
-  if(!t){ renderList(); return; }
-  const hit = await db.start(t);
-  if(hit){
-    const e = S.entries.find(x => x.id === hit.node_id) || { id:hit.node_id, label:hit.label };
-    await chooseEntry(e, hit.guess);
-    S.text = '';                                   // 주호소로 잡히면 목록은 질환 범위로
-  } else {
-    db.miss(null, t);
-    S.scopeDis = null;
-    const hits = Tree.search(t);
-    if(hits.length){
-      resetConsult(`<b>${esc(t)}</b> — 상담 흐름에 없는 증상입니다. 아래 <b>증상 트리</b>에서 골라 보세요.`);
-      S.tq = t; S.text = ''; setBtab('tree');
-    } else {
-      resetConsult(`<b>${esc(t)}</b> — 상담 흐름에도 증상 트리에도 없습니다. 아래 <b>약 목록</b>에서 찾아보세요.`);
-      S.tq = ''; setBtab('drugs');
-    }
-    $('treeBox').scrollIntoView({ behavior:'smooth', block:'start' });
-  }
-  renderList();
+const S = {
+  symptoms: [], items: [], byDrug: {},
+  sym: null, kase: null, showCost: false,
+  dq: '', dsys: '', dbrand: '', dsort: 'name', named: null, updated: null, allSym: false
 };
 
-async function chooseEntry(e, guessed){
-  if(!e) return;
-  S.entry = e; S.kid = null;
-  renderEntries();
-  $('askBody').innerHTML = '<div class="empty">불러오는 중…</div>';
-  const [node, kids] = await Promise.all([db.node(e.id), db.children(e.id)]);
-  S.entryNode = node; S.kids = kids.slice(0,9);          // 관리자에서 늘린 경우까지 모두 (숫자키 1~9)
-  S.scopeDis = ENTRY_TO_DIS[e.label] || null;
-  renderAsk(guessed);
-  $('recBody').innerHTML = '<div class="empty">환자 답에 맞는 경우를 고르세요.</div>';
-  renderList();
+/* ── 데이터 ── */
+async function loadAll(){
+  const [flow, cat] = await Promise.all([sb.rpc('flow_all'), sb.rpc('flow_catalog')]);
+  S.symptoms = (flow.data && flow.data.symptoms) || [];
+  S.items = (cat.data && cat.data.items) || [];
+  S.byDrug = {}; S.items.forEach(i => S.byDrug[i.id] = i);
+  S.updated = (flow.data && flow.data.updated) || null;
+  const sys = [...new Set(S.items.map(i => i.sys).filter(Boolean))].sort((a,b) => a.localeCompare(b,'ko'));
+  $('dsys').innerHTML = '<option value="">계통 전체</option>'
+    + sys.map(s => `<option>${esc(s)}</option>`).join('') + '<option value="__none">미분류</option>';
+  $('dinfo').textContent = `증상 ${S.symptoms.length} · 약 ${S.items.length}품목`;
+  renderSymptoms(); renderList();
 }
 
-function renderAsk(guessed){
-  const n = S.entryNode, kids = S.kids;
-  const ask = n.ask_text || kids.map(k => k.label).join('? ') + '?';
-  // 관리자에서 경우를 바꿨는데 ③④ 문장은 그대로인 경우 알려 줌
-  const said = (n.say_text || '') + ' ' + (n.ask_text || '');
-  const unsaid = n.say_text ? kids.filter(k => !said.includes(k.label)).map(k => k.label) : [];
-  $('askBody').innerHTML =
-    `<div class="ask"><small>${guessed ? '「'+esc(S.entry.label)+'」로 이해했습니다 — ' : ''}이렇게 물어보세요</small>${esc(ask)}</div>
-     <div class="cases">${kids.map((k,i) =>
-       `<button class="case${S.kid && S.kid.node_id===k.node_id ? ' on':''}" data-i="${i}"><span class="key">${i+1}</span>${esc(k.label)}</button>`).join('')}</div>
-     ${unsaid.length ? `<div class="recap" style="color:var(--amber)">「${unsaid.map(esc).join('」「')}」은(는) 물어볼 말에 아직 없습니다 — 관리자 화면 → 증상 트리 → 코치(표준흐름) → ${esc(S.entry.label)}에서 ③④ 문장을 고쳐 주세요.</div>` : ''}
-     ${S.kid ? `<div class="recap">복기: <b>"${esc(S.kid.label)}이신 거죠?"</b></div>` : ''}`;
-  $('askBody').querySelectorAll('.case').forEach(b => b.onclick = () => chooseCase(+b.dataset.i));
+/* ── 증상 칩 ── */
+function renderSymptoms(){
+  const withFlow = S.symptoms.filter(s => (s.cases || []).length);
+  const shown = S.allSym ? withFlow : withFlow.slice(0, 12);
+  const chip = s => `<button class="chip${S.sym && S.sym.id === s.id ? ' on' : ''}" data-sym="${s.id}">${esc(s.name)}`
+    + `<small>${s.cases.length > 1 ? s.cases.length + '경우' : ''}</small></button>`;
+  const picked = S.sym && !shown.includes(S.sym) ? chip(S.sym) : '';
+  $('symChips').innerHTML = picked + shown.map(chip).join('')
+    + (withFlow.length > shown.length
+       ? `<button class="chip" id="chipMore">+ ${withFlow.length - shown.length}개 더</button>`
+       : (S.allSym ? '<button class="chip" id="chipLess">접기</button>' : ''));
 }
 
-/* ── [이벤트] 경우 선택 → 추천 ── */
-async function chooseCase(i){
-  const k = S.kids[i]; if(!k) return;
-  S.kid = k; renderAsk();
-  $('recBody').innerHTML = '<div class="empty">불러오는 중…</div>';
-  const [r, node, alts] = await Promise.all([db.pick(S.entry.id, k.label), db.node(k.node_id), db.alts(k.node_id)]);
-  renderRec(r ? (r.drugs || []) : [], node, alts);
+/* ── 찾기 ── */
+function findSymptom(text){
+  const k = norm(text); if(!k) return null;
+  let hit = S.symptoms.find(s => norm(s.name) === k);
+  if(hit) return hit;
+  hit = S.symptoms.find(s => (s.syn || []).some(x => norm(x) && k.includes(norm(x))));
+  if(hit) return hit;
+  return S.symptoms.find(s => norm(s.name) && (k.includes(norm(s.name)) || norm(s.name).includes(k))) || null;
+}
+function findDrug(text){
+  const k = norm(text); if(k.length < 2) return null;
+  return S.items.find(i => norm(i.name) === k)
+      || S.items.find(i => norm(i.name).includes(k) || (i.master && norm(i.master).includes(k))) || null;
+}
+function symptomsOfDrug(drug){
+  const ids = new Set((drug.lines || []).map(l => l.sym_id));
+  return S.symptoms.filter(s => ids.has(s.id));
 }
 
-function priceCell(dbPrice, it){
-  const sale = dbPrice ?? it?.price;
-  let h = sale ? won(sale) : '';
-  if(S.showCost && it && it.cost != null){
-    const pf = (sale ?? 0) - it.cost;
-    h += `<span class="c">사입 ${won(it.cost)} · 수익 ${won(pf)}</span>`;
-  }
-  return h;
-}
-
-function renderRec(drugs, node, alts){
-  const noPrimary = drugs.length && !drugs.some(d => d.tier !== 'add_on');
-  const rows = (noPrimary ? `<div class="drug"><span class="tier" style="background:var(--amber)">기본</span>
-      <div class="body"><div class="nm" style="color:var(--muted)">기본약이 비어 있습니다 — 관리자 화면에서 넣어 주세요</div></div><div class="pr"></div></div>` : '')
-   + drugs.map(d => {
-    const it = Data.find(d.name, d.drug_id);
-    return `<div class="drug">
-      <span class="tier${d.tier==='add_on'?' add':''}">${d.tier==='add_on'?'함께':'기본'}</span>
-      <div class="body"><div class="nm">${esc(plain(d.name))}</div>
-        ${d.note ? `<div class="nt">${esc(d.note)}</div>` : ''}
-        ${it && it.short ? `<span class="sh">${esc(it.short)}</span>` : ''}</div>
-      <div class="pr">${priceCell(d.sale_price, it)}</div></div>`;
-  }).join('');
-  const altRows = alts.map(a => {
-    const it = Data.find(a.name, a.drug_id);
-    return `<div class="drug">
-      <span class="tier alt">대안</span>
-      <div class="body"><div class="when">${esc(a.alt_when||'')}</div><div class="nm" style="font-size:17px">${esc(plain(a.name))}</div>
-        ${a.note ? `<div class="nt">${esc(a.note)}</div>` : ''}</div>
-      <div class="pr">${priceCell(a.sale_price, it)}</div></div>`;
-  }).join('');
-  const sets = Data.setsFor(drugs.map(d => d.drug_id), S.entry).slice(0,2);
-  const setRows = sets.map(s => `<div class="set"><b>${esc(s.name)}</b> — ${s.items.map(esc).join(' + ')}<div class="why">${esc(s.why)}</div></div>`).join('');
-  const guide = node.guide_text, red = S.entryNode.guide_text;
-
-  $('recBody').innerHTML =
-    (node.say_text ? `<div class="say"><small>권하는 말</small>${esc(node.say_text)}</div>` : '') +
-    (rows || '<div class="empty">연결된 추천약이 없습니다.</div>') +
-    (altRows ? `<div class="sub">상황에 따라</div>${altRows}` : '') +
-    (guide ? `<div class="sub">복약지도 — 이렇게 말씀하세요</div><div class="guide">${esc(guide)}</div>` : '') +
-    (red ? `<div class="red"><b>이럴 땐 병원으로</b>${esc(red)}</div>` : '') +
-    (setRows ? `<div class="sub">함께 권하기 (세트)</div>${setRows}` : '');
-}
-
-function resetConsult(msg){
-  S.entry = null; S.kid = null; S.kids = []; S.entryNode = {};
-  renderEntries();
-  $('askBody').innerHTML = `<div class="empty">${msg}</div>`;
-  $('recBody').innerHTML = '<div class="empty">경우를 고르면 추천약과 복약지도가 여기에 나옵니다.</div>';
-}
-
-/* ── [데이터] 증상 트리 (코치 트리 밖의 기존 분류) ── */
-const Tree = {
-  nodes:{}, kids:{}, links:{},
-  load(obj){
-    this.nodes = {}; this.kids = {}; this.links = {};
-    (obj.nodes || []).forEach(n => { this.nodes[n.id] = n; (this.kids[n.parent_id || ''] = this.kids[n.parent_id || ''] || []).push(n); });
-    (obj.links || []).forEach(l => (this.links[l.node] = this.links[l.node] || []).push(l));
-  },
-  children(id){ return this.kids[id || ''] || []; },
-  path(id){ const out = []; let n = this.nodes[id], g = 0; while(n && g++ < 20){ out.unshift(n); n = this.nodes[n.parent_id]; } return out; },
-  hidden(id){ return this.path(id).some(n => n.coach_link); },          // 코치로 넘긴 항목 아래는 보이지 않음
-  search(text){
-    const words = text.toLowerCase().split(/\s+/).filter(w => w.length >= 1);
-    if(!words.length) return [];
-    return Object.values(this.nodes).filter(n => {
-      if(this.hidden(n.parent_id)) return false;
-      const drugs = n.coach_link ? [] : (this.links[n.id] || []).map(l => l.name);
-      const h = [n.label, ...(n.synonyms || []), ...drugs].join(' ').toLowerCase();
-      return words.some(w => h.includes(w));
-    }).slice(0, 30);
-  }
-};
-async function loadTree(){
-  try{ Tree.load(await db.tree()); }catch(_){ Tree.load({}); }
-  renderTreeBox();
-}
-
-function setBtab(b){
-  S.btab = b;
-  document.querySelectorAll('.btab').forEach(x => x.classList.toggle('on', x.dataset.b === b));
-  $('treeBox').classList.toggle('hidden', b !== 'tree');
-  $('drugBox').classList.toggle('hidden', b !== 'drugs');
-  if(b === 'tree') renderTreeBox(); else renderList();
-}
-document.querySelectorAll('.btab').forEach(x => x.onclick = () => setBtab(x.dataset.b));
-
-function goCoach(entryId){
-  const e = S.entries.find(x => x.id === entryId);
-  if(!e) return;
-  chooseEntry(e);
-  window.scrollTo({ top:0, behavior:'smooth' });
-}
-function goNode(id){
-  S.tq = '';
-  const n = Tree.nodes[id];
-  if(n && n.coach_link){ goCoach(n.coach_link); return; }
-  S.tpath = id ? Tree.path(id).map(x => x.id) : [];
-  renderTreeBox();
-}
-
-function renderTreeBox(){
-  if(S.btab !== 'tree') return;
-  $('scope').classList.add('hidden');
-  const cur = S.tpath[S.tpath.length - 1] || null;
-
-  // 경로
-  const crumbs = [`<button class="${cur ? '' : 'cur'}" data-id="">전체</button>`]
-    .concat(S.tpath.map((id, i) => `<span class="sep">›</span><button class="${i === S.tpath.length - 1 ? 'cur' : ''}" data-id="${id}">${esc(Tree.nodes[id].label)}</button>`));
-  $('crumbs').innerHTML = S.tq ? `<button data-id="">전체</button><span class="sep">›</span><button class="cur">「${esc(S.tq)}」 찾기</button>` : crumbs.join('');
-  $('crumbs').querySelectorAll('button[data-id]').forEach(b => b.onclick = () => goNode(b.dataset.id || null));
-
-  // 검색 결과
-  if(S.tq){
-    const hits = Tree.search(S.tq);
-    $('count').textContent = hits.length + '개 항목';
-    $('treeBody').innerHTML = hits.map(n => {
-      const path = Tree.path(n.id).map(x => x.label).join(' › ');
-      return `<button class="thit" data-id="${n.id}">${esc(path)}${n.coach_link ? ' <small>— 위 상담 흐름으로</small>' : ''}</button>`;
-    }).join('') || '<div class="empty">찾는 증상이 없습니다.</div>';
-    $('treeBody').querySelectorAll('.thit').forEach(b => b.onclick = () => goNode(b.dataset.id));
+function doFind(){
+  const t = $('q').value.trim(); if(!t) return;
+  S.named = null;
+  const sym = findSymptom(t);
+  if(sym){ chooseSymptom(sym); return; }
+  const drug = findDrug(t);
+  if(drug){
+    S.named = drug;
+    const syms = symptomsOfDrug(drug);
+    if(syms.length === 1){ chooseSymptom(syms[0]); return; }
+    S.sym = null; S.kase = null; renderSymptoms();
+    $('askBody').innerHTML = namedBanner(drug)
+      + (syms.length
+         ? `<div class="cases">${syms.map(s => `<button class="case" data-sym="${s.id}">${esc(s.name)}</button>`).join('')}</div>`
+         : `<div class="empty">이 약에 증상이 적혀 있지 않습니다 — 관리자 화면에서 증상을 넣어 주세요.</div>`);
+    $('recBody').innerHTML = '<div class="empty">증상을 고르면 상담품목이 나옵니다.</div>';
+    S.dq = t; $('dq').value = t; renderList();
     return;
   }
+  $('askBody').innerHTML = `<div class="empty"><b>${esc(t)}</b> — 증상에도 약 이름에도 없습니다. 아래 약 목록에서 찾아보세요.</div>`;
+  S.dq = t; $('dq').value = t; renderList();
+}
+function namedBanner(drug){
+  return `<div class="named"><b>${esc(drug.name)}</b>은(는) ${drug.brand === 'O' ? '지명품목' : '약 이름'}입니다`
+    + `${drug.price ? ' · ' + won(drug.price) : ''}.<br>증상부터 상담해 상담품목으로 권해 보세요.</div>`;
+}
 
-  const kids = Tree.children(cur);
-  const links = cur ? (Tree.links[cur] || []) : [];
-  $('count').textContent = cur ? (kids.length ? kids.length + '개 항목' : links.length + '개 약') : kids.length + '개 계통';
-
-  const nodeBtn = n => {
-    if(n.coach_link){
-      const e = S.entries.find(x => x.id === n.coach_link);
-      return `<button class="tnode coach" data-id="${n.id}">${esc(n.label)}<small>상담 흐름 있음 → 위에서 보기${e ? ' (' + esc(e.label) + ')' : ''}</small></button>`;
-    }
-    const sub = Tree.children(n.id).length, dn = (Tree.links[n.id] || []).length;
-    return `<button class="tnode" data-id="${n.id}">${esc(n.label)}${n.referral ? '<span class="ref">병원 권유</span>' : ''}
-      <small>${sub ? sub + '개 항목' : dn ? '약 ' + dn + '개' : '약 없음'}</small></button>`;
-  };
-  let h = kids.length ? `<div class="tgrid">${kids.map(nodeBtn).join('')}</div>` : '';
-  if(cur && Tree.nodes[cur].referral) h += `<div class="red"><b>병원 권유</b>증상이 오래가거나 심하면 진료를 먼저 권하세요.</div>`;
-  if(links.length){
-    h += (kids.length ? '<div class="tsub">이 항목의 추천약</div>' : '') +
-         `<div class="grid">${links.map(l => {
-            const it = Data.byId && Data.byId.get(l.drug_id);   // 트리 약은 id로만 연결 (이름 추측 안 함)
-            const tier = `<span class="tier-badge${l.tier === 'add_on' ? ' add' : ''}">${l.tier === 'add_on' ? '함께·대안' : '기본'}</span>`;
-            if(it) return card(it, tier, l.note);
-            return `<article class="card"><div class="h"><div class="n">${esc(plain(l.name))}</div>${tier}</div>
-              ${l.note ? `<div class="kv">${esc(l.note)}</div>` : ''}
-              <div class="tags">약 목록에 없음 — 관리자 화면 「약 목록」에서 추가하면 가격·권매사유가 붙습니다</div></article>`;
-          }).join('')}</div>`;
-  } else if(cur && !kids.length){
-    h += '<div class="empty">이 항목에 연결된 약이 없습니다.</div>';
+/* ── 증상 → 경우 ── */
+function chooseSymptom(sym){
+  S.sym = sym; S.kase = null;
+  renderSymptoms(); renderAsk();
+  $('recBody').innerHTML = '<div class="empty">환자 답에 맞는 경우를 고르세요.</div>';
+  const cases = sym.cases || [];
+  if(cases.length === 1) chooseCase(0);
+  renderList();
+}
+function renderAsk(){
+  const s = S.sym; if(!s) return;
+  const cases = s.cases || [];
+  const labels = cases.filter(c => c.label).map(c => c.label);
+  const ask = s.ask || (labels.length ? labels.join('? ') + '?' : s.name + ' 때문에 오셨군요.');
+  let h = S.named ? namedBanner(S.named) : '';
+  h += `<div class="ask"><small>이렇게 물어보세요</small><b>${esc(ask)}</b></div>`;
+  if(labels.length){
+    h += `<div class="cases">${cases.map((c,i) =>
+      `<button class="case${S.kase === c ? ' on' : ''}" data-case="${i}">`
+      + `${i < 9 ? `<span class="key">${i+1}</span>` : ''}${esc(c.label || '기본')}</button>`).join('')}</div>`;
   }
-  $('treeBody').innerHTML = h;
-  $('treeBody').querySelectorAll('.tnode').forEach(b => b.onclick = () => goNode(b.dataset.id));
+  if(S.kase) h += `<div class="recap">복기: <b>"${esc(S.kase.label || S.sym.name)}이신 거죠?"</b></div>`;
+  $('askBody').innerHTML = h;
+}
+function chooseCase(i){
+  const c = ((S.sym && S.sym.cases) || [])[i]; if(!c) return;
+  S.kase = c; renderAsk(); renderRec(c);
 }
 
-/* ── [화면] 약 목록 ── */
-const SYS = ['진통·해열','감기·호흡기','소화기','피부','구강','안과','신경·기타','여성·비뇨기','의약외품·의료용품'];
-const OTHER = '미분류';
-function renderSysChips(){
-  const extra = Data.items.some(i => !i.sys) ? [OTHER] : [];
-  $('sysChips').innerHTML = ['', ...SYS, ...extra].map(s =>
-    `<button class="chip${S.sys===s?' on':''}" data-s="${s}">${s||'전체'}</button>`).join('');
-  $('sysChips').querySelectorAll('.chip').forEach(b => b.onclick = () => { S.sys = b.dataset.s; renderList(); });
+/* ── 추천 ── */
+function priceCell(d){
+  const it = S.byDrug[d.drug_id];
+  const sale = d.price != null ? d.price : (it && it.price);
+  let h = sale ? won(sale) : '';
+  if(S.showCost && it && it.cost != null) h += `<span class="c">사입 ${won(it.cost)} · 수익 ${won((sale || 0) - it.cost)}</span>`;
+  return h;
 }
-function hay(it){
-  return [it.name,it.ing,it.eff,it.dis,it.sys,it.short,it.tag,it.maker,...it.reasons.map(r=>r.raw)].join(' ').toLowerCase();
+function renderRec(c){
+  const shown = (c.drugs || []).filter(d => d.role !== '지명');
+  const named = (c.drugs || []).filter(d => d.role === '지명');
+  const base = shown.filter(d => d.role === '기본');
+  const rows = (base.length ? '' :
+      `<div class="drug"><span class="tier none">기본</span><div class="body">
+        <div class="nm" style="color:var(--muted)">기본약이 비어 있습니다 — 관리자 화면에서 넣어 주세요</div></div><div class="pr"></div></div>`)
+    + shown.map(d => {
+      const it = S.byDrug[d.drug_id];
+      const cls = d.role === '추가' ? ' add' : d.role === '대안' ? ' alt' : '';
+      return `<div class="drug"><span class="tier${cls}">${esc(d.role)}</span>
+        <div class="body">
+          ${d.role === '대안' && d.alt_when ? `<div class="when">${esc(d.alt_when)}</div>` : ''}
+          <div class="nm">${esc(d.name)}</div>
+          ${d.reason ? `<div class="nt">${esc(d.reason)}</div>` : ''}
+          ${it && it.short ? `<span class="sh">${esc(it.short)}</span>` : ''}</div>
+        <div class="pr">${priceCell(d)}</div></div>`;
+    }).join('');
+  const namedRows = named.length
+    ? `<div class="note" style="margin-top:10px">환자가 이름 대고 찾으면: `
+      + named.map(d => esc(d.name) + (d.price ? ' ' + won(d.price) : '')).join(' · ') + `</div>`
+    : '';
+  $('recBody').innerHTML = rows + namedRows
+    + (c.say ? `<div class="say">${esc(c.say)}</div>` : '')
+    + (c.guide ? `<div class="guide">${esc(c.guide)}</div>` : '')
+    + (S.sym.red ? `<div class="red">${esc(S.sym.red)}</div>` : '');
+}
+
+/* ── 약 목록 ── */
+function hay(i){
+  return [i.name, i.master, i.ing, i.eff, i.dis, i.sys, i.short, i.maker,
+          ...(i.lines || []).map(l => l.sym + ' ' + l.case + ' ' + l.reason)].join(' ').toLowerCase();
 }
 function renderList(){
-  if(S.btab !== 'drugs') return;
-  renderSysChips();
-  let xs = Data.items;
-  if(S.scopeDis){ xs = xs.filter(i => S.scopeDis.includes(i.dis)); }
-  if(S.sys) xs = xs.filter(i => S.sys === OTHER ? !i.sys : i.sys === S.sys);
-  if(S.brand) xs = xs.filter(i => i.brand === S.brand);
-  if(S.text){
-    const words = S.text.toLowerCase().split(/\s+/).filter(w => w.length >= 1);
-    xs = xs.filter(i => { const h = hay(i); return words.some(w => h.includes(w)); });
-  }
+  let xs = S.items;
+  if(S.dsys) xs = xs.filter(i => S.dsys === '__none' ? !i.sys : i.sys === S.dsys);
+  if(S.dbrand) xs = xs.filter(i => i.brand === S.dbrand);
+  const words = S.dq.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  if(words.length) xs = xs.filter(i => { const h = hay(i); return words.every(w => h.includes(w)); });
   const sorters = {
-    p: (a,b) => a.top - b.top || (b.profit||0) - (a.profit||0),
-    profit: (a,b) => (b.profit||0) - (a.profit||0),
-    price: (a,b) => (a.price||1e9) - (b.price||1e9),
-    name: (a,b) => a.name.localeCompare(b.name, 'ko')
+    name: (a,b) => a.name.localeCompare(b.name, 'ko'),
+    price: (a,b) => (a.price == null ? 1e9 : a.price) - (b.price == null ? 1e9 : b.price),
+    profit: (a,b) => ((b.price || 0) - (b.cost || 0)) - ((a.price || 0) - (a.cost || 0))
   };
-  xs = [...xs].sort(sorters[S.sort]);
-
-  $('scope').classList.toggle('hidden', !S.scopeDis);
-  if(S.scopeDis) $('scopeTxt').textContent = (S.entry ? S.entry.label + ' 관련 — ' : '') + S.scopeDis.join(', ');
-  $('count').textContent = xs.length + '개 품목';
-  $('dataInfo').textContent = Data.info;
-
-  $('grid').innerHTML = xs.map(it => card(it)).join('') || '<div class="empty">조건에 맞는 약이 없습니다.</div>';
+  xs = [...xs].sort(sorters[S.dsort]);
+  $('dcount').textContent = `${xs.length}개 품목`;
+  $('dgrid').innerHTML = xs.map(cardHtml).join('') || '<div class="empty">조건에 맞는 약이 없습니다.</div>';
 }
-function card(it, tierBadge, linkNote){
-  const rs = it.reasons.map(r =>
-    `<li><span class="p">${r.p}</span><span>${esc(r.sym)}${r.cond ? ` <span class="c">${esc(r.cond)}</span>` : ''}</span></li>`).join('');
-  const pf = (it.price != null && it.cost != null) ? it.price - it.cost : it.profit;
-  const pct = (pf != null && it.price) ? Math.round(pf / it.price * 100) : null;
+function cardHtml(i){
+  const lines = (i.lines || []).slice(0, 4).map(l =>
+    `<li><span class="p">${esc(l.role)}</span><span>${esc(l.sym)}${l.case ? ' · ' + esc(l.case) : ''}</span></li>`).join('');
+  const pf = (i.price != null && i.cost != null) ? i.price - i.cost : null;
   return `<article class="card">
-    <div class="h"><div class="n">${esc(it.name)}</div>
-      ${it.brand==='O' ? '<span class="badge b-o">지명</span>' : ''}
-      ${it.tag ? `<span class="badge b-set">${esc(it.tag)}</span>` : ''}
-      ${it.reasons.length && it.top <= 1 ? '<span class="badge b-top">1순위</span>' : ''}${tierBadge || ''}</div>
-    ${linkNote ? `<div class="kv" style="color:var(--muted)">${esc(linkNote)}</div>` : ''}
-    ${it.short ? `<span class="sh" style="display:inline-block;margin-top:4px;font-size:13px;color:var(--green-ink);background:var(--green-soft);border-radius:6px;padding:1px 7px">${esc(it.short)}</span>` : ''}
-    ${rs ? `<ul class="rs">${rs}</ul>` : ''}
-    <div class="tags">${it.sys ? esc(it.sys) + ' · ' + esc(it.dis) : '미분류 (관리자 화면에서 계통을 정해 주세요)'}${it.status==='pending' ? ' · 약국 전용 품목' : ''}${it.maker ? ' · ' + esc(it.maker) : ''}</div>
-    <div class="kv">${it.ing ? `<div><span>성분</span> ${esc(it.ing)}</div>` : ''}${it.eff ? `<div><span>효능</span> ${esc(it.eff)}</div>` : ''}${it.caution ? `<div><span>주의</span> ${esc(it.caution)}</div>` : ''}</div>
-    <div class="money"><span class="sale">${it.price ? won(it.price) : '가격 미정'}</span>
-      ${S.showCost ? `<span class="cost">사입 ${it.cost!=null ? won(it.cost) : '—'}</span>${pf!=null ? `<span class="pf">수익 ${won(pf)}${pct!=null?` (${pct}%)`:''}</span>` : ''}` : ''}</div>
+    <div class="n">${esc(i.name)}
+      ${i.brand === 'O' ? '<span class="badge b-o">지명</span>' : i.brand === 'X' ? '<span class="badge b-x">상담</span>' : ''}</div>
+    <div class="tags">${i.sys ? esc(i.sys) + (i.dis ? ' · ' + esc(i.dis) : '') : '미분류'}${i.status === 'pending' ? ' · 약국 전용' : ''}</div>
+    ${lines ? `<ul>${lines}</ul>` : '<div class="tags" style="margin-top:6px">증상 없음</div>'}
+    <div class="kv">${i.ing ? `<div><span>성분</span>${esc(i.ing)}</div>` : ''}${i.caution ? `<div><span>주의</span>${esc(i.caution)}</div>` : ''}</div>
+    <div class="money">${i.price ? won(i.price) : '가격 미정'}
+      ${S.showCost ? `<span class="cost">사입 ${i.cost != null ? won(i.cost) : '—'}${pf != null ? ' · 수익 ' + won(pf) : ''}</span>` : ''}</div>
   </article>`;
 }
 
-$('scopeX').onclick = () => { S.scopeDis = null; renderList(); };
-$('fBrand').onchange = e => { S.brand = e.target.value; renderList(); };
-$('fSort').onchange  = e => { S.sort = e.target.value; renderList(); };
+/* ── 이벤트 ── */
+$('symChips').onclick = e => {
+  if(e.target.id === 'chipMore'){ S.allSym = true; renderSymptoms(); return; }
+  if(e.target.id === 'chipLess'){ S.allSym = false; renderSymptoms(); return; }
+  const b = e.target.closest('[data-sym]'); if(!b) return;
+  const s = S.symptoms.find(x => x.id === b.dataset.sym); if(s){ S.named = null; chooseSymptom(s); }
+};
+$('askBody').onclick = e => {
+  const c = e.target.closest('[data-case]');
+  if(c){ chooseCase(Number(c.dataset.case)); return; }
+  const s = e.target.closest('[data-sym]');
+  if(s){ const sym = S.symptoms.find(x => x.id === s.dataset.sym); if(sym) chooseSymptom(sym); }
+};
+$('btnFind').onclick = doFind;
+$('q').onkeydown = e => { if(e.key === 'Enter') doFind(); };
+$('dq').oninput = e => { S.dq = e.target.value; renderList(); };
+$('dsys').onchange = e => { S.dsys = e.target.value; renderList(); };
+$('dbrand').onchange = e => { S.dbrand = e.target.value; renderList(); };
+$('dsort').onchange = e => { S.dsort = e.target.value; renderList(); };
 $('btnCost').onclick = () => {
   S.showCost = !S.showCost;
-  $('btnCost').classList.toggle('on', S.showCost);
-  $('btnCost').setAttribute('aria-pressed', S.showCost);
-  renderList(); renderTreeBox();
-  if(S.kid) chooseCase(S.kids.indexOf(S.kid));
+  $('btnCost').textContent = S.showCost ? '원가 숨기기' : '원가';
+  renderList(); if(S.kase) renderRec(S.kase);
 };
-
-/* 숫자키 1~9: 경우 선택 / Esc: 새 손님 */
+$('btnReload').onclick = () => loadAll();
+$('btnReset').onclick = () => {
+  S.sym = null; S.kase = null; S.named = null; S.dq = ''; $('q').value = ''; $('dq').value = '';
+  $('askBody').innerHTML = '<div class="empty">위에서 증상을 고르거나 환자 말을 입력하세요.</div>';
+  $('recBody').innerHTML = '<div class="empty">경우를 고르면 약이 나옵니다.</div>';
+  renderSymptoms(); renderList(); $('q').focus();
+};
 document.addEventListener('keydown', e => {
-  if(e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') {
-    if(e.key === 'Escape') e.target.blur();
-    return;
-  }
-  if(/^[1-9]$/.test(e.key) && S.kids[+e.key - 1]) chooseCase(+e.key - 1);
-  if(e.key === 'Escape'){ resetConsult('위에서 <b>증상</b>을 고르거나, 환자가 한 말을 입력하세요.'); S.scopeDis=null; S.text=''; S.tq=''; S.tpath=[]; $('q').value=''; renderList(); renderTreeBox(); $('q').focus(); }
-  if(e.key === '/'){ e.preventDefault(); $('q').focus(); $('q').select(); }
+  if(e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+  if(e.key === '/'){ e.preventDefault(); $('q').focus(); $('q').select(); return; }
+  if(/^[1-9]$/.test(e.key) && S.sym) chooseCase(Number(e.key) - 1);
 });
 
-/* ── 목록 새로고침 (관리자 화면에서 고친 뒤) ── */
-$('btnReload').onclick = async () => { await Promise.all([loadCatalog(), loadTree()]); toast('약 목록과 증상 트리를 새로 불러왔습니다.'); };
+/* ── 로그인 ── */
+function show(w){ $('login').classList.toggle('hidden', w !== 'login'); $('app').classList.toggle('hidden', w !== 'app'); }
+$('btnLogin').onclick = async () => {
+  $('loginErr').textContent = '';
+  const { error } = await sb.auth.signInWithPassword({ email: $('email').value.trim(), password: $('pw').value });
+  if(error){ $('loginErr').textContent = '로그인 실패 — 이메일과 비밀번호를 확인하세요.'; return; }
+  start();
+};
+$('pw').onkeydown = e => { if(e.key === 'Enter') $('btnLogin').click(); };
+$('btnLogout').onclick = async () => { await sb.auth.signOut(); location.reload(); };
 
-/* ── 보조 ── */
-function esc(s){ return String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
-function plain(n){ return String(n||'').replace(/\(.*?\)/g,'').trim(); }
-function won(n){ return Number(n).toLocaleString() + '원'; }
-let toastT = null;
-function toast(t){ let el = document.querySelector('.toast'); if(!el){ el = document.createElement('div'); el.className='toast'; document.body.appendChild(el); }
-  el.textContent = t; clearTimeout(toastT); toastT = setTimeout(() => el.remove(), 3500); }
-
-/* ── 시작 ── */
-boot();
+async function start(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if(!session){ show('login'); return; }
+  show('app');
+  const { data } = await sb.from('pharmacies').select('name').eq('id', session.user.id).maybeSingle();
+  $('who').textContent = (data && data.name) || session.user.email;
+  await loadAll();
+  $('q').focus();
+}
+start();
 </script>
 </body>
 </html>
