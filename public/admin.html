@@ -104,7 +104,6 @@
     <button id="tabDrug">약 목록</button>
     <span class="sp"></span>
     <span class="who" id="who"></span>
-    <button id="btnReload">새로고침</button>
     <button id="btnLogout">로그아웃</button>
   </header>
   <main>
@@ -174,6 +173,7 @@ async function loadAll(){
   if(S.sym) S.sym = S.symptoms.find(x => x.id === S.sym.id) || null;
   if(S.drug) S.drug = S.byDrug[S.drug.id] || null;
   renderSymList(); renderSymPane(); renderDrugList(); renderDrugPane();
+  lastLoad = Date.now();
 }
 
 /* ── 증상 목록 ── */
@@ -563,7 +563,16 @@ $('dq').oninput = e => { S.dq = e.target.value; renderDrugList(); };
 $('dfilter').onchange = e => { S.dfilter = e.target.value; renderDrugList(); };
 $('btnAddSym').onclick = () => openSymModal(null);
 $('btnAddDrug').onclick = openAddDrugModal;
-$('btnReload').onclick = () => loadAll().then(() => toast('새로 읽었습니다'));
+/* 다른 탭에 갔다 돌아오면 다시 읽는다 */
+let lastLoad = Date.now();
+async function refreshIfStale(){
+  if(document.hidden || $('app').classList.contains('hidden')) return;
+  if(Date.now() - lastLoad < 8000) return;
+  if($('modalRoot').innerHTML) return;            // 편집창이 열려 있으면 건드리지 않음
+  await loadAll(); lastLoad = Date.now();
+}
+document.addEventListener('visibilitychange', refreshIfStale);
+window.addEventListener('focus', refreshIfStale);
 $('tabSym').onclick = () => setView('sym');
 $('tabDrug').onclick = () => setView('drug');
 function setView(v){
