@@ -130,7 +130,8 @@
       <h2 id="symHead" style="cursor:pointer;display:flex;align-items:center;gap:6px">
         <span id="symCaret">▾</span><span>증상</span><span id="symPick" style="color:var(--green-ink)"></span>
       </h2>
-      <div class="chips" id="symChips"></div>
+      <input type="search" id="symq" placeholder="증상 찾기 — 예: 무좀" style="max-width:280px;margin-bottom:9px">
+      <div class="chips" id="symChips" style="max-height:190px;overflow:auto"></div>
     </div>
 
     <div class="row" style="margin-bottom:14px">
@@ -149,16 +150,6 @@
       <div class="tools">
         <input type="search" id="dq" placeholder="약 이름·성분·증상 검색" style="min-width:220px">
         <select id="dsys"><option value="">계통 전체</option></select>
-        <select id="dbrand">
-          <option value="">지명·상담 전체</option>
-          <option value="X">상담품목만</option>
-          <option value="O">지명품목만</option>
-        </select>
-        <select id="dsort">
-          <option value="name">이름 순</option>
-          <option value="price">판매가 낮은 순</option>
-          <option value="profit">수익 높은 순</option>
-        </select>
         <span class="note" id="dinfo"></span>
       </div>
       <div class="note" id="dcount" style="margin-bottom:8px"></div>
@@ -179,7 +170,7 @@ const norm = s => String(s || '').replace(/[^가-힣A-Za-z0-9]/g, '').toLowerCas
 const S = {
   symptoms: [], items: [], byDrug: {},
   sym: null, kase: null, showCost: false,
-  dq: '', dsys: '', dbrand: '', dsort: 'name', named: null, updated: null, allSym: false, symOpen: true
+  dq: '', dsys: '', named: null, updated: null, symq: '', symOpen: true
 };
 
 /* ── 데이터 ── */
@@ -198,16 +189,15 @@ async function loadAll(){
 
 /* ── 증상 칩 ── */
 function renderSymptoms(){
-  const withFlow = S.symptoms.filter(s => (s.cases || []).length);
-  const shown = S.allSym ? withFlow : withFlow.slice(0, 12);
+  const q = (S.symq || '').trim().toLowerCase();
+  const withFlow = S.symptoms.filter(s => (s.cases || []).length)
+    .filter(s => !q || s.name.toLowerCase().includes(q) || (s.syn || []).some(x => x.toLowerCase().includes(q)))
+    .sort((a,b) => a.name.localeCompare(b.name, 'ko'));
   const chip = s => `<button class="chip${S.sym && S.sym.id === s.id ? ' on' : ''}" data-sym="${s.id}">${esc(s.name)}`
     + `<small>${s.cases.length > 1 ? s.cases.length + '경우' : ''}</small></button>`;
-  const picked = S.sym && !shown.includes(S.sym) ? chip(S.sym) : '';
-  $('symChips').innerHTML = picked + shown.map(chip).join('')
-    + (withFlow.length > shown.length
-       ? `<button class="chip" id="chipMore">+ ${withFlow.length - shown.length}개 더</button>`
-       : (S.allSym ? '<button class="chip" id="chipLess">적게 보기</button>' : ''));
+  $('symChips').innerHTML = withFlow.map(chip).join('') || '<div class="empty">찾는 증상이 없습니다.</div>';
   $('symChips').classList.toggle('hidden', !S.symOpen);
+  $('symq').classList.toggle('hidden', !S.symOpen);
   $('symCaret').textContent = S.symOpen ? '▾' : '▸';
   $('symPick').textContent = S.sym ? '— ' + S.sym.name : (S.symOpen ? '' : '— 눌러서 펼치기');
 }
@@ -331,15 +321,9 @@ function hay(i){
 function renderList(){
   let xs = S.items;
   if(S.dsys) xs = xs.filter(i => S.dsys === '__none' ? !i.sys : i.sys === S.dsys);
-  if(S.dbrand) xs = xs.filter(i => i.brand === S.dbrand);
   const words = S.dq.trim().toLowerCase().split(/\s+/).filter(Boolean);
   if(words.length) xs = xs.filter(i => { const h = hay(i); return words.every(w => h.includes(w)); });
-  const sorters = {
-    name: (a,b) => a.name.localeCompare(b.name, 'ko'),
-    price: (a,b) => (a.price == null ? 1e9 : a.price) - (b.price == null ? 1e9 : b.price),
-    profit: (a,b) => ((b.price || 0) - (b.cost || 0)) - ((a.price || 0) - (a.cost || 0))
-  };
-  xs = [...xs].sort(sorters[S.dsort]);
+  xs = [...xs].sort((a,b) => a.name.localeCompare(b.name, 'ko'));
   $('dcount').textContent = `${xs.length}개 품목`;
   $('dgrid').innerHTML = xs.map(cardHtml).join('') || '<div class="empty">조건에 맞는 약이 없습니다.</div>';
 }
@@ -360,9 +344,9 @@ function cardHtml(i){
 
 /* ── 이벤트 ── */
 $('symHead').onclick = () => { S.symOpen = !S.symOpen; renderSymptoms(); };
+$('symq').oninput = e => { S.symq = e.target.value; renderSymptoms(); };
+$('symq').onclick = e => e.stopPropagation();
 $('symChips').onclick = e => {
-  if(e.target.id === 'chipMore'){ S.allSym = true; renderSymptoms(); return; }
-  if(e.target.id === 'chipLess'){ S.allSym = false; renderSymptoms(); return; }
   const b = e.target.closest('[data-sym]'); if(!b) return;
   const s = S.symptoms.find(x => x.id === b.dataset.sym); if(s){ S.named = null; chooseSymptom(s); }
 };
@@ -376,8 +360,6 @@ $('btnFind').onclick = doFind;
 $('q').onkeydown = e => { if(e.key === 'Enter') doFind(); };
 $('dq').oninput = e => { S.dq = e.target.value; renderList(); };
 $('dsys').onchange = e => { S.dsys = e.target.value; renderList(); };
-$('dbrand').onchange = e => { S.dbrand = e.target.value; renderList(); };
-$('dsort').onchange = e => { S.dsort = e.target.value; renderList(); };
 $('btnCost').onclick = () => {
   S.showCost = !S.showCost;
   $('btnCost').textContent = S.showCost ? '원가 숨기기' : '원가';
