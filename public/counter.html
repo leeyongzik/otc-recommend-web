@@ -210,10 +210,10 @@
         <option value="O">지명(O)만</option>
       </select>
       <select id="fSort">
+        <option value="name">이름 순</option>
         <option value="p">우선순위 순</option>
         <option value="profit">수익 높은 순</option>
         <option value="price">판매가 낮은 순</option>
-        <option value="name">이름 순</option>
       </select>
       <span class="note" id="dataInfo"></span>
     </div>
@@ -307,7 +307,7 @@ const ENTRY_TO_DIS = {
 /* ── [상태] ── */
 const S = {
   pharmacyId:null, entries:[], entry:null, entryNode:{}, kids:[], kid:null,
-  showCost:false, sys:'', brand:'', sort:'p', text:'', scopeDis:null,
+  showCost:false, sys:'', brand:'', sort:'name', text:'', scopeDis:null,
   btab:'tree', tpath:[], tq:''          // 아래쪽 탭 · 증상 트리 경로 · 트리 검색어
 };
 
@@ -423,7 +423,10 @@ function priceCell(dbPrice, it){
 }
 
 function renderRec(drugs, node, alts){
-  const rows = drugs.map(d => {
+  const noPrimary = drugs.length && !drugs.some(d => d.tier !== 'add_on');
+  const rows = (noPrimary ? `<div class="drug"><span class="tier" style="background:var(--amber)">기본</span>
+      <div class="body"><div class="nm" style="color:var(--muted)">기본약이 비어 있습니다 — 관리자 화면에서 넣어 주세요</div></div><div class="pr"></div></div>` : '')
+   + drugs.map(d => {
     const it = Data.find(d.name, d.drug_id);
     return `<div class="drug">
       <span class="tier${d.tier==='add_on'?' add':''}">${d.tier==='add_on'?'함께':'기본'}</span>
