@@ -146,13 +146,17 @@
     </div>
 
     <div class="box">
-      <h2>약 목록</h2>
-      <div class="tools">
-        <input type="search" id="dq" placeholder="약 이름·성분·증상 검색" style="min-width:220px">
-        <span class="note" id="dinfo"></span>
+      <h2 id="drugHead" style="cursor:pointer;display:flex;align-items:center;gap:6px">
+        <span id="drugCaret">▸</span><span>약 목록</span><span id="drugHint" style="color:var(--green-ink)"></span>
+      </h2>
+      <div id="drugWrap" class="hidden">
+        <div class="tools">
+          <input type="search" id="dq" placeholder="약 이름·성분·증상 검색" style="min-width:220px">
+          <span class="note" id="dinfo"></span>
+        </div>
+        <div class="note" id="dcount" style="margin-bottom:8px"></div>
+        <div class="grid" id="dgrid"></div>
       </div>
-      <div class="note" id="dcount" style="margin-bottom:8px"></div>
-      <div class="grid" id="dgrid"></div>
     </div>
   </main>
 </div>
@@ -169,7 +173,7 @@ const norm = s => String(s || '').replace(/[^가-힣A-Za-z0-9]/g, '').toLowerCas
 const S = {
   symptoms: [], items: [], byDrug: {},
   sym: null, kase: null, showCost: false,
-  dq: '', named: null, updated: null, symq: '', symOpen: true
+  dq: '', named: null, updated: null, symq: '', symOpen: true, drugOpen: false
 };
 
 /* ── 데이터 ── */
@@ -233,11 +237,11 @@ function doFind(){
          ? `<div class="cases">${syms.map(s => `<button class="case" data-sym="${s.id}">${esc(s.name)}</button>`).join('')}</div>`
          : `<div class="empty">이 약에 증상이 적혀 있지 않습니다 — 관리자 화면에서 증상을 넣어 주세요.</div>`);
     $('recBody').innerHTML = '<div class="empty">증상을 고르면 상담품목이 나옵니다.</div>';
-    S.dq = t; $('dq').value = t; renderList();
+    S.dq = t; S.drugOpen = true; $('dq').value = t; renderList();
     return;
   }
   $('askBody').innerHTML = `<div class="empty"><b>${esc(t)}</b> — 증상에도 약 이름에도 없습니다. 아래 약 목록에서 찾아보세요.</div>`;
-  S.dq = t; $('dq').value = t; renderList();
+  S.dq = t; S.drugOpen = true; $('dq').value = t; renderList();
 }
 function namedBanner(drug){
   return `<div class="named"><b>${esc(drug.name)}</b>은(는) ${drug.brand === 'O' ? '지명품목' : '약 이름'}입니다`
@@ -320,6 +324,9 @@ function renderList(){
   if(words.length) xs = xs.filter(i => { const h = hay(i); return words.every(w => h.includes(w)); });
   xs = [...xs].sort((a,b) => a.name.localeCompare(b.name, 'ko'));
   $('dcount').textContent = `${xs.length}개 품목`;
+  $('drugWrap').classList.toggle('hidden', !S.drugOpen);
+  $('drugCaret').textContent = S.drugOpen ? '▾' : '▸';
+  $('drugHint').textContent = S.drugOpen ? '' : `— ${S.items.length}품목, 눌러서 펼치기`;
   $('dgrid').innerHTML = xs.map(cardHtml).join('') || '<div class="empty">조건에 맞는 약이 없습니다.</div>';
 }
 function cardHtml(i){
@@ -353,6 +360,7 @@ $('askBody').onclick = e => {
 };
 $('btnFind').onclick = doFind;
 $('q').onkeydown = e => { if(e.key === 'Enter') doFind(); };
+$('drugHead').onclick = () => { S.drugOpen = !S.drugOpen; renderList(); };
 $('dq').oninput = e => { S.dq = e.target.value; renderList(); };
 $('btnCost').onclick = () => {
   S.showCost = !S.showCost;
@@ -361,7 +369,7 @@ $('btnCost').onclick = () => {
 };
 $('btnReload').onclick = () => loadAll();
 $('btnReset').onclick = () => {
-  S.sym = null; S.kase = null; S.named = null; S.dq = ''; S.symOpen = true; $('q').value = ''; $('dq').value = '';
+  S.sym = null; S.kase = null; S.named = null; S.dq = ''; S.symOpen = true; S.drugOpen = false; $('q').value = ''; $('dq').value = '';
   $('askBody').innerHTML = '<div class="empty">위에서 증상을 고르거나 환자 말을 입력하세요.</div>';
   $('recBody').innerHTML = '<div class="empty">경우를 고르면 약이 나옵니다.</div>';
   renderSymptoms(); renderList(); $('q').focus();
