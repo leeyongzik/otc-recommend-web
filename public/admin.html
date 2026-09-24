@@ -125,6 +125,7 @@ main{ flex:1; padding:14px 16px 60px; }
 }
 .drug-edit-actions{ display:flex; gap:7px; margin-top:2px; }
 
+.emptyPrimary{ border:1px dashed var(--amber); background:#fff8ec; color:var(--ink-soft); border-radius:12px; padding:13px; font-size:13px; cursor:pointer; }
 .addDrugBox{ background:var(--pine-tint); border:1px dashed var(--pine); border-radius:12px; padding:13px; margin-top:8px; }
 .searchResultItem{
   padding:9px 10px; border:1px solid var(--line); border-radius:8px; margin-top:6px;
@@ -616,12 +617,13 @@ function renderDrugEditor(nodeId){
   const addons = recs.filter(r=>!r.is_alt && r.tier==='add_on').sort((a,b)=>a.priority-b.priority);
   const alts = recs.filter(r=>r.is_alt).sort((a,b)=>a.priority-b.priority);
   let html = '';
-  if(recs.length===0){
-    html += `<div class="section-label">등록된 추천약이 없습니다</div>`;
-  }
+  html += `<div class="section-label">기본 추천</div>`;
   if(primaries.length){
-    html += `<div class="section-label">기본 추천</div>`;
     primaries.forEach(r => html += drugCardHtml(r,''));
+  } else {
+    html += `<div class="emptyPrimary" onclick="document.getElementById('drugSearchInput').focus()">
+      기본약이 비어 있습니다 — 아래 <b>+ 약 추가</b>에서 약을 넣으면 기본약으로 들어갑니다.
+    </div>`;
   }
   if(addons.length){
     html += `<div class="section-label">추가·대안</div>`;
