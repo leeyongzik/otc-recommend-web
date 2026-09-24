@@ -149,7 +149,6 @@
       <h2>약 목록</h2>
       <div class="tools">
         <input type="search" id="dq" placeholder="약 이름·성분·증상 검색" style="min-width:220px">
-        <select id="dsys"><option value="">계통 전체</option></select>
         <span class="note" id="dinfo"></span>
       </div>
       <div class="note" id="dcount" style="margin-bottom:8px"></div>
@@ -170,7 +169,7 @@ const norm = s => String(s || '').replace(/[^가-힣A-Za-z0-9]/g, '').toLowerCas
 const S = {
   symptoms: [], items: [], byDrug: {},
   sym: null, kase: null, showCost: false,
-  dq: '', dsys: '', named: null, updated: null, symq: '', symOpen: true
+  dq: '', named: null, updated: null, symq: '', symOpen: true
 };
 
 /* ── 데이터 ── */
@@ -180,9 +179,6 @@ async function loadAll(){
   S.items = (cat.data && cat.data.items) || [];
   S.byDrug = {}; S.items.forEach(i => S.byDrug[i.id] = i);
   S.updated = (flow.data && flow.data.updated) || null;
-  const sys = [...new Set(S.items.map(i => i.sys).filter(Boolean))].sort((a,b) => a.localeCompare(b,'ko'));
-  $('dsys').innerHTML = '<option value="">계통 전체</option>'
-    + sys.map(s => `<option>${esc(s)}</option>`).join('') + '<option value="__none">미분류</option>';
   $('dinfo').textContent = `증상 ${S.symptoms.length} · 약 ${S.items.length}품목`;
   renderSymptoms(); renderList();
 }
@@ -300,7 +296,7 @@ function renderRec(c){
           ${d.role === '대안' && d.alt_when ? `<div class="when">${esc(d.alt_when)}</div>` : ''}
           <div class="nm">${esc(d.name)}</div>
           ${d.reason ? `<div class="nt">${esc(d.reason)}</div>` : ''}
-          ${it && it.short ? `<span class="sh">${esc(it.short)}</span>` : ''}</div>
+          </div>
         <div class="pr">${priceCell(d)}</div></div>`;
     }).join('');
   const namedRows = named.length
@@ -315,12 +311,11 @@ function renderRec(c){
 
 /* ── 약 목록 ── */
 function hay(i){
-  return [i.name, i.master, i.ing, i.eff, i.dis, i.sys, i.short, i.maker,
+  return [i.name, i.master, i.ing, i.maker, i.supplier,
           ...(i.lines || []).map(l => l.sym + ' ' + l.case + ' ' + l.reason)].join(' ').toLowerCase();
 }
 function renderList(){
   let xs = S.items;
-  if(S.dsys) xs = xs.filter(i => S.dsys === '__none' ? !i.sys : i.sys === S.dsys);
   const words = S.dq.trim().toLowerCase().split(/\s+/).filter(Boolean);
   if(words.length) xs = xs.filter(i => { const h = hay(i); return words.every(w => h.includes(w)); });
   xs = [...xs].sort((a,b) => a.name.localeCompare(b.name, 'ko'));
@@ -334,9 +329,9 @@ function cardHtml(i){
   return `<article class="card">
     <div class="n">${esc(i.name)}
       ${i.brand === 'O' ? '<span class="badge b-o">지명</span>' : i.brand === 'X' ? '<span class="badge b-x">상담</span>' : ''}</div>
-    <div class="tags">${i.sys ? esc(i.sys) + (i.dis ? ' · ' + esc(i.dis) : '') : '미분류'}${i.status === 'pending' ? ' · 약국 전용' : ''}</div>
+    <div class="tags">${i.maker ? esc(i.maker) : ''}${i.spec ? ' · ' + esc(i.spec) : ''}${i.status === 'pending' ? ' · 약국 전용' : ''}</div>
     ${lines ? `<ul>${lines}</ul>` : '<div class="tags" style="margin-top:6px">증상 없음</div>'}
-    <div class="kv">${i.ing ? `<div><span>성분</span>${esc(i.ing)}</div>` : ''}${i.caution ? `<div><span>주의</span>${esc(i.caution)}</div>` : ''}</div>
+    <div class="kv">${i.ing ? `<div><span>성분</span>${esc(i.ing)}</div>` : ''}</div>
     <div class="money">${i.price ? won(i.price) : '가격 미정'}
       ${S.showCost ? `<span class="cost">사입 ${i.cost != null ? won(i.cost) : '—'}${pf != null ? ' · 수익 ' + won(pf) : ''}</span>` : ''}</div>
   </article>`;
@@ -359,7 +354,6 @@ $('askBody').onclick = e => {
 $('btnFind').onclick = doFind;
 $('q').onkeydown = e => { if(e.key === 'Enter') doFind(); };
 $('dq').oninput = e => { S.dq = e.target.value; renderList(); };
-$('dsys').onchange = e => { S.dsys = e.target.value; renderList(); };
 $('btnCost').onclick = () => {
   S.showCost = !S.showCost;
   $('btnCost').textContent = S.showCost ? '원가 숨기기' : '원가';

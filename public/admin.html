@@ -131,7 +131,6 @@
             <option value="">전체</option>
             <option value="noprice">판매가 없음</option>
             <option value="nosym">증상 없음</option>
-            <option value="nosys">계통 미분류</option>
             <option value="O">지명품목</option>
             <option value="X">상담품목</option>
           </select>
@@ -153,7 +152,6 @@ const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const won = n => n == null ? '' : Number(n).toLocaleString('ko-KR') + '원';
 const ROLES = ['기본','추가','대안','지명'];
-const SYS_LIST = ['진통·해열','감기·호흡기','소화기','피부','구강','안과','신경·기타','여성·비뇨기','의약외품·의료용품'];
 
 const S = { uid:null, symptoms:[], items:[], byDrug:{}, sym:null, drug:null, sq:'', dq:'', dfilter:'', view:'sym' };
 
@@ -290,18 +288,18 @@ function openLineModal(line, presetCase, presetDrug){
     `<option value="${x.id}" ${(line ? line.sym_id : (S.sym && S.sym.id)) === x.id ? 'selected' : ''}>${esc(x.name)}</option>`).join('');
   modal(`<h3>${isNew ? '약 넣기' : '약 행 고치기'}</h3>
     ${isNew ? `<div class="f"><label>약 찾기</label>
-        <input id="m_drugq" placeholder="약 이름 검색 — 약 목록에 있는 약만">
+        <input id="m_drugq" placeholder="약 이름 검색 — 내 약 목록과 나라 약 데이터를 함께 찾습니다">
         <div class="res" id="m_res"></div>
         <div id="m_picked" style="margin-top:6px;font-weight:700"></div></div>`
       : `<div class="f"><label>약</label><div style="font-weight:700">${esc(line.name)}</div></div>`}
     <div class="grid3">
       <div class="f"><label>증상</label><select id="m_sym">${symOpts}</select></div>
-      <div class="f"><label>경우 (비우면 경우 없이 바로 추천)</label>
-        <input id="m_case" value="${esc(line ? line.case : (presetCase || ''))}" list="caseList"></div>
+      <div class="f"><label>경우</label>
+        <select id="m_casesel"></select>
+        <input id="m_case" placeholder="새 경우 이름" style="margin-top:6px" class="hidden"></div>
       <div class="f"><label>역할</label><select id="m_role">
         ${ROLES.map(r => `<option ${line && line.role === r ? 'selected' : ''}>${r}</option>`).join('')}</select></div>
     </div>
-    <datalist id="caseList">${((S.sym && S.sym.cases) || []).map(c => `<option value="${esc(c.label)}">`).join('')}</datalist>
     <div class="grid2">
       <div class="f"><label>권매사유 — 이 약을 권하는 이유</label><input id="m_reason" value="${esc(line ? line.reason : '')}"></div>
       <div class="f"><label>대안 조건 (역할이 대안일 때)</label><input id="m_alt" value="${esc(line ? line.alt_when : '')}"></div>
@@ -315,22 +313,70 @@ function openLineModal(line, presetCase, presetDrug){
       <button class="btn" onclick="closeModal()">닫기</button>
       <button class="btn go" id="m_save">저장</button>
     </div>`);
+  const curCase = line ? line.case : (presetCase || '');
+  function fillCases(){
+    const symObj = S.symptoms.find(x => x.id === $('m_sym').value);
+    const cases = (symObj && symObj.cases) || [];
+    const opts = cases.map(c => `<option value="${esc(c.label)}" ${c.label === curCase ? 'selected' : ''}>`
+      + `${esc(c.label || '(경우 없이 바로 추천)')}</option>`).join('');
+    const hasCur = cases.some(c => c.label === curCase);
+    $('m_casesel').innerHTML = opts
+      + (cases.some(c => c.label === '') ? '' : '<option value="">(경우 없이 바로 추천)</option>')
+      + `<option value="__new" ${!hasCur && curCase ? 'selected' : ''}>+ 새 경우 만들기</option>`;
+    toggleNewCase();
+  }
+  function toggleNewCase(){
+    const isNewCase = $('m_casesel').value === '__new';
+    $('m_case').classList.toggle('hidden', !isNewCase);
+    if(isNewCase && !$('m_case').value) $('m_case').value = curCase || '';
+  }
+  function caseValue(){ return $('m_casesel').value === '__new' ? $('m_case').value.trim() : $('m_casesel').value; }
+  fillCases();
+  $('m_sym').onchange = fillCases;
+  $('m_casesel').onchange = toggleNewCase;
+
   let picked = line ? { id: line.drug_id, name: line.name } : (presetDrug || null);
   if(isNew){
     if(picked) $('m_picked').textContent = '고른 약: ' + picked.name;
-    $('m_drugq').oninput = () => {
-      const q = $('m_drugq').value.trim().toLowerCase();
+    let seq = 0;
+    $('m_drugq').oninput = async () => {
+      const q = $('m_drugq').value.trim(); const my = ++seq;
       if(q.length < 1){ $('m_res').innerHTML = ''; return; }
-      const xs = S.items.filter(i => i.name.toLowerCase().includes(q) || (i.master || '').toLowerCase().includes(q)).slice(0, 20);
-      $('m_res').innerHTML = xs.map(i => `<div data-pick="${i.id}">${esc(i.name)}
-        ${i.brand === 'O' ? '<span class="badge b-o">지명</span>' : ''}
-        <span style="color:var(--muted)">${i.price ? won(i.price) : ''}</span></div>`).join('')
-        || '<div style="color:var(--muted)">약 목록에 없습니다 — 「약 목록」 탭에서 먼저 추가하세요.</div>';
+      const lq = q.toLowerCase();
+      const mine = S.items.filter(i => i.name.toLowerCase().includes(lq) || (i.master || '').toLowerCase().includes(lq)).slice(0, 12);
+      const mineHtml = mine.map(i => `<div data-pick="${i.id}"><b>${esc(i.name)}</b>
+        <span class="badge b-x">내 목록</span>${i.brand === 'O' ? '<span class="badge b-o">지명</span>' : ''}
+        <span style="color:var(--muted)">${i.price ? won(i.price) : '가격 없음'}</span></div>`).join('');
+      $('m_res').innerHTML = mineHtml + '<div style="color:var(--muted);padding:6px 10px">나라 약 데이터 찾는 중…</div>';
+      if(q.length < 2){ $('m_res').innerHTML = mineHtml; return; }
+      const { data } = await sb.from('drugs').select('id,name,company').ilike('name', `%${q}%`).limit(12);
+      if(my !== seq) return;
+      const have = new Set(S.items.map(i => i.id));
+      const natl = (data || []).filter(d => !have.has(d.id));
+      $('m_res').innerHTML = mineHtml
+        + natl.map(d => `<div data-add="${d.id}" data-name="${esc(d.name)}">${esc(d.name)}
+            <span class="badge" style="background:var(--blue-soft);color:var(--blue)">약 DB</span>
+            <span style="color:var(--muted)">${esc(d.company || '')}</span></div>`).join('')
+        + (mine.length || natl.length ? '' :
+           `<div data-new="1" style="color:var(--green-ink)">+ 「${esc(q)}」을(를) 약국 전용 품목으로 등록</div>`);
     };
-    $('m_res').onclick = e => {
-      const b = e.target.closest('[data-pick]'); if(!b) return;
-      picked = S.byDrug[b.dataset.pick];
-      $('m_picked').textContent = '고른 약: ' + picked.name;
+    $('m_res').onclick = async e => {
+      const b = e.target.closest('[data-pick]');
+      if(b){
+        picked = S.byDrug[b.dataset.pick];
+        $('m_picked').textContent = '고른 약: ' + picked.name;
+        $('m_res').innerHTML = ''; $('m_drugq').value = ''; return;
+      }
+      const a = e.target.closest('[data-add]');
+      const n = e.target.closest('[data-new]');
+      if(!a && !n) return;
+      const args = a ? { p_drug_id: a.dataset.add, p_name: a.dataset.name }
+                     : { p_drug_id: null, p_name: $('m_drugq').value.trim() };
+      const { data, error } = await sb.rpc('catalog_add_drug', args);
+      if(error){ toast('약 목록에 넣지 못했습니다: ' + error.message); return; }
+      await loadAll();
+      picked = S.byDrug[data] || { id: data, name: args.p_name };
+      $('m_picked').textContent = '고른 약: ' + picked.name + ' (약 목록에 새로 넣었습니다 — 가격은 약 목록 탭에서)';
       $('m_res').innerHTML = ''; $('m_drugq').value = '';
     };
   }
@@ -340,7 +386,7 @@ function openLineModal(line, presetCase, presetDrug){
     if(role === '대안' && !$('m_alt').value.trim()){ toast('대안은 조건을 적어 주세요'); return; }
     const symId = $('m_sym').value;
     const symObj = S.symptoms.find(x => x.id === symId);
-    const label = $('m_case').value.trim();
+    const label = caseValue();
     const known = ((symObj && symObj.cases) || []).find(c => c.label === label);
     const { error } = await sb.rpc('flow_save_line', {
       p_id: line ? line.line_id : null, p_drug_id: picked.id, p_symptom_id: symId,
@@ -363,14 +409,13 @@ function findLine(lineId){
 
 /* ── 약 목록 ── */
 function drugHay(i){
-  return [i.name, i.master, i.ing, i.eff, i.dis, i.sys, i.short, i.maker,
+  return [i.name, i.master, i.ing, i.maker, i.supplier,
           ...(i.lines || []).map(l => l.sym + ' ' + l.case + ' ' + l.reason)].join(' ').toLowerCase();
 }
 function renderDrugList(){
   let xs = S.items;
   if(S.dfilter === 'noprice') xs = xs.filter(i => i.price == null);
   if(S.dfilter === 'nosym') xs = xs.filter(i => !(i.lines || []).length);
-  if(S.dfilter === 'nosys') xs = xs.filter(i => !i.sys);
   if(S.dfilter === 'O' || S.dfilter === 'X') xs = xs.filter(i => i.brand === S.dfilter);
   const words = S.dq.trim().toLowerCase().split(/\s+/).filter(Boolean);
   if(words.length) xs = xs.filter(i => { const h = drugHay(i); return words.every(w => h.includes(w)); });
@@ -379,7 +424,7 @@ function renderDrugList(){
         ${i.brand === 'O' ? '<span class="badge b-o">지명</span>' : i.brand === 'X' ? '<span class="badge b-x">상담</span>' : ''}</div>
       <div class="s">${i.price ? won(i.price) : '<span class="warn">판매가 없음</span>'}
         · ${(i.lines || []).length ? '증상 ' + i.lines.length : '<span class="warn">증상 없음</span>'}
-        · ${i.sys ? esc(i.sys) : '<span class="warn">미분류</span>'}</div>
+        ${i.maker ? '· ' + esc(i.maker) : ''}</div>
     </div>`).join('') || '<div class="empty">없습니다.</div>';
 }
 function renderDrugPane(){
@@ -395,30 +440,22 @@ function renderDrugPane(){
     </div>
     ${i.master && i.master !== i.name ? `<div class="s" style="color:var(--muted);font-size:12.5px;margin-bottom:8px">약 DB 이름: ${esc(i.master)}</div>` : ''}
     <div class="grid3">
-      ${f('제품명', 'd_name', i.name)}
-      <div class="f"><label>계통</label><select id="d_sys"><option value="">미분류</option>
-        ${SYS_LIST.map(x => `<option ${i.sys === x ? 'selected' : ''}>${x}</option>`).join('')}
-        ${i.sys && !SYS_LIST.includes(i.sys) ? `<option selected>${esc(i.sys)}</option>` : ''}</select></div>
+      ${f('판매가', 'd_price', i.price, {type:'number'})}
+      ${f('사입가', 'd_cost', i.cost, {type:'number'})}
+      ${f('사입처', 'd_supplier', i.supplier)}
+    </div>
+    <div class="grid2">
+      ${f('화면에 보이는 이름', 'd_name', i.name)}
       <div class="f"><label>지명 / 상담</label><select id="d_brand">
         <option value="" ${!i.brand ? 'selected' : ''}>정하지 않음</option>
         <option value="O" ${i.brand === 'O' ? 'selected' : ''}>지명 — 결과에 안 나옴</option>
         <option value="X" ${i.brand === 'X' ? 'selected' : ''}>상담 — 결과에 나옴</option></select></div>
     </div>
-    <div class="grid3">
-      ${f('질환·증상 분류', 'd_dis', i.dis)}
-      ${f('판매가', 'd_price', i.price, {type:'number'})}
-      ${f('사입가', 'd_cost', i.cost, {type:'number'})}
+    <div class="kv" style="font-size:13px;color:var(--muted);margin-bottom:10px">
+      ${i.ing ? `<div><b>성분</b> ${esc(i.ing)}</div>` : ''}
+      ${i.maker ? `<div><b>제조사</b> ${esc(i.maker)}${i.spec ? ' · ' + esc(i.spec) : ''}</div>` : ''}
+      <div style="margin-top:4px">성분·제조사는 나라 약 데이터에서 읽습니다.</div>
     </div>
-    <div class="grid2">
-      ${f('짧은 상담문구', 'd_short', i.short)}
-      ${f('제조사', 'd_maker', i.maker)}
-    </div>
-    <div class="grid2">
-      ${f('사입처', 'd_supplier', i.supplier)}
-      ${f('효능', 'd_eff', i.eff)}
-    </div>
-    ${f('성분', 'd_ing', i.ing, {area:true})}
-    ${f('주의·금기', 'd_caution', i.caution, {area:true})}
     <hr style="border:0;border-top:1px solid var(--line);margin:14px 0">
     <div class="tools" style="justify-content:space-between">
       <b style="font-size:14px">이 약이 나가는 증상</b>
@@ -437,9 +474,7 @@ function renderDrugPane(){
 async function saveDrug(){
   const i = S.drug;
   const p = {
-    name: $('d_name').value.trim(), sys: $('d_sys').value, dis: $('d_dis').value,
-    brand: $('d_brand').value, short: $('d_short').value, ing: $('d_ing').value,
-    eff: $('d_eff').value, caution: $('d_caution').value, maker: $('d_maker').value,
+    name: $('d_name').value.trim(), brand: $('d_brand').value,
     supplier: $('d_supplier').value, price: $('d_price').value, cost: $('d_cost').value
   };
   const { error } = await sb.rpc('flow_save_drug', { p_drug_id: i.id, p });
