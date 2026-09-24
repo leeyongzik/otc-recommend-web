@@ -127,7 +127,9 @@
 
   <main>
     <div class="box" style="margin-bottom:14px">
-      <h2>증상</h2>
+      <h2 id="symHead" style="cursor:pointer;display:flex;align-items:center;gap:6px">
+        <span id="symCaret">▾</span><span>증상</span><span id="symPick" style="color:var(--green-ink)"></span>
+      </h2>
       <div class="chips" id="symChips"></div>
     </div>
 
@@ -177,7 +179,7 @@ const norm = s => String(s || '').replace(/[^가-힣A-Za-z0-9]/g, '').toLowerCas
 const S = {
   symptoms: [], items: [], byDrug: {},
   sym: null, kase: null, showCost: false,
-  dq: '', dsys: '', dbrand: '', dsort: 'name', named: null, updated: null, allSym: false
+  dq: '', dsys: '', dbrand: '', dsort: 'name', named: null, updated: null, allSym: false, symOpen: true
 };
 
 /* ── 데이터 ── */
@@ -204,7 +206,10 @@ function renderSymptoms(){
   $('symChips').innerHTML = picked + shown.map(chip).join('')
     + (withFlow.length > shown.length
        ? `<button class="chip" id="chipMore">+ ${withFlow.length - shown.length}개 더</button>`
-       : (S.allSym ? '<button class="chip" id="chipLess">접기</button>' : ''));
+       : (S.allSym ? '<button class="chip" id="chipLess">적게 보기</button>' : ''));
+  $('symChips').classList.toggle('hidden', !S.symOpen);
+  $('symCaret').textContent = S.symOpen ? '▾' : '▸';
+  $('symPick').textContent = S.sym ? '— ' + S.sym.name : (S.symOpen ? '' : '— 눌러서 펼치기');
 }
 
 /* ── 찾기 ── */
@@ -255,7 +260,7 @@ function namedBanner(drug){
 
 /* ── 증상 → 경우 ── */
 function chooseSymptom(sym){
-  S.sym = sym; S.kase = null;
+  S.sym = sym; S.kase = null; S.symOpen = false;
   renderSymptoms(); renderAsk();
   $('recBody').innerHTML = '<div class="empty">환자 답에 맞는 경우를 고르세요.</div>';
   const cases = sym.cases || [];
@@ -354,6 +359,7 @@ function cardHtml(i){
 }
 
 /* ── 이벤트 ── */
+$('symHead').onclick = () => { S.symOpen = !S.symOpen; renderSymptoms(); };
 $('symChips').onclick = e => {
   if(e.target.id === 'chipMore'){ S.allSym = true; renderSymptoms(); return; }
   if(e.target.id === 'chipLess'){ S.allSym = false; renderSymptoms(); return; }
@@ -379,7 +385,7 @@ $('btnCost').onclick = () => {
 };
 $('btnReload').onclick = () => loadAll();
 $('btnReset').onclick = () => {
-  S.sym = null; S.kase = null; S.named = null; S.dq = ''; $('q').value = ''; $('dq').value = '';
+  S.sym = null; S.kase = null; S.named = null; S.dq = ''; S.symOpen = true; $('q').value = ''; $('dq').value = '';
   $('askBody').innerHTML = '<div class="empty">위에서 증상을 고르거나 환자 말을 입력하세요.</div>';
   $('recBody').innerHTML = '<div class="empty">경우를 고르면 약이 나옵니다.</div>';
   renderSymptoms(); renderList(); $('q').focus();
