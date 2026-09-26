@@ -292,6 +292,9 @@ function openSymModal(s){
     const name = $('m_name').value.trim();
     if(!name){ toast('증상 이름을 넣으세요'); return; }
     const syn = $('m_syn').value.split(',').map(x => x.trim()).filter(Boolean);
+    const one = syn.filter(x => x.replace(/[^가-힣A-Za-z0-9]/g, '').length === 1);
+    if(one.length && !confirm(`한 글자 동의어 「${one.join('」「')}」은(는) 너무 넓게 걸립니다.\n`
+        + `예: 「땀」은 땀띠·땀샘에도 걸립니다. 「식은땀」「땀 많이」처럼 두 글자 이상을 권합니다.\n\n그래도 저장할까요?`)) return;
     const pickId = s ? $('m_merge').value : '';
     const same = S.symptoms.find(x => x.name === name && (!s || x.id !== s.id));
     if(s && (pickId || same)){

@@ -202,13 +202,42 @@ function renderSymptoms(){
 }
 
 /* ── 찾기 ── */
-function findSymptom(text){
-  const k = norm(text); if(!k) return null;
-  let hit = S.symptoms.find(s => norm(s.name) === k);
-  if(hit) return hit;
-  hit = S.symptoms.find(s => (s.syn || []).some(x => norm(x) && k.includes(norm(x))));
-  if(hit) return hit;
-  return S.symptoms.find(s => norm(s.name) && (k.includes(norm(s.name)) || norm(s.name).includes(k))) || null;
+/* 환자 말에 맞는 증상을 점수 순으로 모두 찾는다 */
+function rankSymptoms(text){
+  const k = norm(text); if(!k) return [];
+  const out = [];
+  for(const s of S.symptoms){
+    if(!(s.cases || []).length) continue;
+    const nm = norm(s.name);
+    let score = 0, why = '', hitsN = 0;
+    if(nm === k){ score = 1000; why = s.name; }
+    else if(nm.length >= 2 && k.includes(nm)){ score = 500 + nm.length; why = s.name; }
+    for(const x of (s.syn || [])){
+      // 띄어 쓴 동의어는 조각이 모두 들어 있으면 맞은 것으로 (「잠 안」 ↔ 「잠이 안 와요」)
+      const parts = String(x).split(/\s+/).map(norm).filter(Boolean);
+      if(!parts.length || !parts.every(p => k.includes(p))) continue;
+      const w = parts.join(''); hitsN++;
+      const sc = (w === k ? 400 : 100) + w.length * 10 - (w.length === 1 ? 60 : 0);
+      if(sc > score){ score = sc; why = x; }
+    }
+    // 환자 말이 증상 이름 안에 통째로 들어 있으면 가산 (「질 가려움」 → 질염 의심·질 가려움·분비물)
+    if(k.length >= 2 && nm.includes(k)) score = Math.max(score, 300 + k.length * 10);
+    if(score) out.push({ s, score: score + Math.max(0, hitsN - 1) * 5, why });
+  }
+  return out.sort((a,b) => b.score - a.score || a.s.name.localeCompare(b.s.name, 'ko'));
+}
+function renderPick(t, hits, all){
+  const shown = all ? hits : hits.slice(0, 6);
+  const word = hits[0].why;
+  $('askBody').innerHTML =
+    `<div class="ask"><small>「${esc(t)}」에 맞는 증상이 ${hits.length}개입니다</small>`
+    + `<b>어느 쪽인지 환자에게 물어보세요</b></div>`
+    + `<div class="cases">${shown.map(h =>
+        `<button class="case" data-sym="${h.s.id}">${esc(h.s.name)}</button>`).join('')}`
+    + (hits.length > shown.length ? `<button class="case" id="pickMore">+ ${hits.length - shown.length}개 더</button>` : '')
+    + `</div>`;
+  $('recBody').innerHTML = '<div class="empty">증상을 고르면 경우와 약이 나옵니다.</div>';
+  const more = $('pickMore'); if(more) more.onclick = ev => { ev.stopPropagation(); renderPick(t, hits, true); };
 }
 function findDrug(text){
   const k = norm(text); if(k.length < 2) return null;
@@ -223,8 +252,15 @@ function symptomsOfDrug(drug){
 function doFind(){
   const t = $('q').value.trim(); if(!t) return;
   S.named = null;
-  const sym = findSymptom(t);
-  if(sym){ chooseSymptom(sym); return; }
+  const hits = rankSymptoms(t);
+  // 하나만 걸리거나, 이름이 똑같거나, 1등이 확실히 앞서면 바로 들어감
+  if(hits.length === 1 || (hits.length && (hits[0].score >= 1000 || hits[0].score - hits[1].score >= 100))){
+    chooseSymptom(hits[0].s); return;
+  }
+  if(hits.length > 1){
+    S.sym = null; S.kase = null; renderSymptoms();
+    renderPick(t, hits, false); return;
+  }
   const drug = findDrug(t);
   if(drug){
     S.named = drug;
