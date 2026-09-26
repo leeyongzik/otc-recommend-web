@@ -217,7 +217,7 @@ function rankSymptoms(text){
       const parts = String(x).split(/\s+/).map(norm).filter(Boolean);
       if(!parts.length || !parts.every(p => k.includes(p))) continue;
       const w = parts.join(''); hitsN++;
-      const sc = (w === k ? 400 : 100) + w.length * 10 - (w.length === 1 ? 60 : 0);
+      const sc = (w === k ? 900 : 100) + w.length * 10 - (w.length === 1 ? 60 : 0);
       if(sc > score){ score = sc; why = x; }
     }
     // 환자 말이 증상 이름 안에 통째로 들어 있으면 가산 (「질 가려움」 → 질염 의심·질 가려움·분비물)
@@ -226,18 +226,41 @@ function rankSymptoms(text){
   }
   return out.sort((a,b) => b.score - a.score || a.s.name.localeCompare(b.s.name, 'ko'));
 }
+/* 경우 이름에서 찾기 — 증상 후보보다 뒤에 둔다 */
+function rankCases(text){
+  const k = norm(text); if(k.length < 2) return [];
+  const out = [];
+  for(const s of S.symptoms){
+    for(const c of (s.cases || [])){
+      const lb = norm(c.label); if(lb.length < 2) continue;
+      let score = 0;
+      if(lb === k) score = 1100;                                            // 경우 이름과 똑같음 — 가장 구체적
+      else if(k.includes(lb) && lb.length >= 4) score = 600 + lb.length * 10; // 환자 말 안에 긴 경우 이름이 통째로
+      else if(k.includes(lb)) score = 70 + lb.length;
+      else if(lb.includes(k)) score = 60 + k.length;
+      if(score) out.push({ s, c, score });
+    }
+  }
+  return out.sort((a,b) => b.score - a.score || a.s.name.localeCompare(b.s.name, 'ko'));
+}
 function renderPick(t, hits, all){
   const shown = all ? hits : hits.slice(0, 6);
-  const word = hits[0].why;
   $('askBody').innerHTML =
-    `<div class="ask"><small>「${esc(t)}」에 맞는 증상이 ${hits.length}개입니다</small>`
+    `<div class="ask"><small>「${esc(t)}」에 맞는 곳이 ${hits.length}개입니다</small>`
     + `<b>어느 쪽인지 환자에게 물어보세요</b></div>`
-    + `<div class="cases">${shown.map(h =>
-        `<button class="case" data-sym="${h.s.id}">${esc(h.s.name)}</button>`).join('')}`
+    + `<div class="cases">${shown.map(h => h.c
+        ? `<button class="case" data-jump="${h.s.id}" data-label="${esc(h.c.label)}">${esc(h.s.name)} › <b>${esc(h.c.label)}</b></button>`
+        : `<button class="case" data-sym="${h.s.id}">${esc(h.s.name)}</button>`).join('')}`
     + (hits.length > shown.length ? `<button class="case" id="pickMore">+ ${hits.length - shown.length}개 더</button>` : '')
     + `</div>`;
-  $('recBody').innerHTML = '<div class="empty">증상을 고르면 경우와 약이 나옵니다.</div>';
+  $('recBody').innerHTML = '<div class="empty">고르면 경우와 약이 나옵니다.</div>';
   const more = $('pickMore'); if(more) more.onclick = ev => { ev.stopPropagation(); renderPick(t, hits, true); };
+}
+function jumpToCase(symId, label){
+  const sym = S.symptoms.find(x => x.id === symId); if(!sym) return;
+  chooseSymptom(sym);
+  const i = (sym.cases || []).findIndex(c => c.label === label);
+  if(i >= 0) chooseCase(i);
 }
 function findDrug(text){
   const k = norm(text); if(k.length < 2) return null;
@@ -252,14 +275,19 @@ function symptomsOfDrug(drug){
 function doFind(){
   const t = $('q').value.trim(); if(!t) return;
   S.named = null;
-  const hits = rankSymptoms(t);
-  // 하나만 걸리거나, 이름이 똑같거나, 1등이 확실히 앞서면 바로 들어감
-  if(hits.length === 1 || (hits.length && (hits[0].score >= 1000 || hits[0].score - hits[1].score >= 100))){
-    chooseSymptom(hits[0].s); return;
+  const symHits = rankSymptoms(t);
+  const top0 = symHits[0] && symHits[0].s;
+  // 증상 하나만 걸렸으면 그 증상 안의 경우는 후보에서 뺌 (들어가면 경우 버튼으로 보임)
+  const caseHits = rankCases(t).filter(h => symHits.length !== 1 || h.s.id !== top0.id || h.score >= 1000);
+  const all = symHits.concat(caseHits).sort((a,b) => b.score - a.score);
+  const clear = all.length === 1 || (all.length > 1 && all[0].score - all[1].score >= 100);
+  if(all.length && clear){
+    if(all[0].c) jumpToCase(all[0].s.id, all[0].c.label); else chooseSymptom(all[0].s);
+    return;
   }
-  if(hits.length > 1){
+  if(all.length){
     S.sym = null; S.kase = null; renderSymptoms();
-    renderPick(t, hits, false); return;
+    renderPick(t, all, false); return;
   }
   const drug = findDrug(t);
   if(drug){
@@ -388,6 +416,8 @@ $('symChips').onclick = e => {
   const s = S.symptoms.find(x => x.id === b.dataset.sym); if(s){ S.named = null; chooseSymptom(s); }
 };
 $('askBody').onclick = e => {
+  const j = e.target.closest('[data-jump]');
+  if(j){ S.named = null; jumpToCase(j.dataset.jump, j.dataset.label); return; }
   const c = e.target.closest('[data-case]');
   if(c){ chooseCase(Number(c.dataset.case)); return; }
   const s = e.target.closest('[data-sym]');
