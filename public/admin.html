@@ -32,6 +32,8 @@
   main{max-width:1240px;margin:0 auto;padding:16px 18px 80px}
   .cols{display:grid;grid-template-columns:320px 1fr;gap:14px;align-items:start}
   @media(max-width:920px){ .cols{grid-template-columns:1fr} }
+  .back{display:none;margin-bottom:10px}
+  @media(max-width:920px){ .back{display:inline-block} }
   .box{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 15px}
   .box h2{font-size:12px;margin:0 0 10px;color:var(--muted);font-weight:700}
   .tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
@@ -205,6 +207,7 @@ function renderSymPane(){
   if(!s){ $('symPane').innerHTML = '<div class="empty">왼쪽에서 증상을 고르세요.</div>'; return; }
   const cases = [...(s.cases || [])].sort((a,b) => (a.sort - b.sort) || a.label.localeCompare(b.label,'ko'));
   $('symPane').innerHTML = `
+    <button class="btn sm back" data-back="symList">↑ 목록으로</button>
     <div class="tools" style="justify-content:space-between">
       <h2 style="margin:0;font-size:17px;color:var(--ink)">${esc(s.name)}</h2>
       <span>
@@ -464,6 +467,7 @@ function renderDrugPane(){
     opt && opt.area ? `<textarea id="${id}">${esc(val || '')}</textarea>`
     : `<input id="${id}" ${opt && opt.type ? 'type="' + opt.type + '"' : ''} value="${esc(val == null ? '' : val)}">`}</div>`;
   $('drugPane').innerHTML = `
+    <button class="btn sm back" data-back="drugList">↑ 목록으로</button>
     <div class="tools" style="justify-content:space-between">
       <h2 style="margin:0;font-size:17px;color:var(--ink)">${esc(i.name)}</h2>
       <span><button class="btn sm go" id="btnSaveDrug">저장</button></span>
@@ -545,10 +549,24 @@ function openAddDrugModal(){
 }
 
 /* ── 이벤트 ── */
+const narrow = () => window.matchMedia('(max-width:920px)').matches;
+function goPane(id){
+  if(!narrow()) return;
+  const y = $(id).getBoundingClientRect().top + window.scrollY - 64;   // 머리글 높이만큼 여유
+  window.scrollTo({ top: y, behavior: 'smooth' });
+}
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-back]'); if(!b) return;
+  const list = $(b.dataset.back);
+  const box = list.closest('.box');
+  const sel = list.querySelector('.item.on');
+  window.scrollTo({ top: box.getBoundingClientRect().top + window.scrollY - 64, behavior: 'smooth' });
+  if(sel) sel.scrollIntoView({ block: 'nearest' });
+});
 $('symList').onclick = e => {
   const b = e.target.closest('[data-sym]'); if(!b) return;
   S.sym = S.symptoms.find(x => x.id === b.dataset.sym) || null;
-  renderSymList(); renderSymPane();
+  renderSymList(); renderSymPane(); goPane('symPane');
 };
 $('symPane').onclick = async e => {
   const edit = e.target.closest('#btnEditSym'); if(edit){ openSymModal(S.sym); return; }
@@ -575,7 +593,7 @@ $('symPane').onclick = async e => {
 };
 $('drugList').onclick = e => {
   const b = e.target.closest('[data-drug]'); if(!b) return;
-  S.drug = S.byDrug[b.dataset.drug] || null; renderDrugList(); renderDrugPane();
+  S.drug = S.byDrug[b.dataset.drug] || null; renderDrugList(); renderDrugPane(); goPane('drugPane');
 };
 $('drugPane').onclick = async e => {
   const ln = e.target.closest('[data-line]'); if(ln){ openLineModal(findLine(ln.dataset.line)); return; }
