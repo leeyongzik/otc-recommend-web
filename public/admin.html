@@ -250,6 +250,7 @@ function lineHtml(d, c){
 
 /* ── 증상 모달 ── */
 function openSymModal(s){
+  const others = [...S.symptoms].filter(x => !s || x.id !== s.id).sort((a,b) => a.name.localeCompare(b.name,'ko'));
   modal(`<h3>${s ? '증상 고치기' : '새 증상'}</h3>
     <div class="f"><label>증상 이름</label><input id="m_name" value="${esc(s ? s.name : '')}"></div>
     <div class="f"><label>동의어 — 쉼표로 구분 (환자 말에서 이 증상을 찾습니다)</label>
@@ -258,15 +259,43 @@ function openSymModal(s){
       <textarea id="m_ask">${esc(s ? (s.ask || '') : '')}</textarea></div>
     <div class="f"><label>적색기·공통 복약지도</label>
       <textarea id="m_red">${esc(s ? (s.red || '') : '')}</textarea></div>
+    ${s ? `<div class="f"><label>다른 증상에 합치기 — 이 증상의 약은 고른 증상 아래 경우 「${esc(s.name)}」로 옮겨집니다</label>
+      <select id="m_merge"><option value="">합치지 않음</option>
+        ${others.map(x => `<option value="${x.id}">${esc(x.name)}</option>`).join('')}</select></div>` : ''}
     <div class="tools" style="justify-content:flex-end">
       ${s ? '<button class="btn del" id="m_del">증상 삭제</button>' : ''}
       <button class="btn" onclick="closeModal()">닫기</button>
       <button class="btn go" id="m_save">저장</button>
     </div>`);
+
+  async function mergeInto(target, syn){
+    const cnt = ((s.cases || []).reduce((n,c) => n + (c.drugs || []).length, 0));
+    if(!confirm(`「${s.name}」을(를) 「${target.name}」에 합칠까요?\n\n`
+      + `· 약 ${cnt}줄이 「${target.name}」 아래 경우 「${s.name}」로 옮겨집니다\n`
+      + `· 동의어가 합쳐지고 「${s.name}」 증상은 없어집니다\n`
+      + `· 경우 이름은 나중에 「이름·순서」로 바꿀 수 있습니다`)) return;
+    // 모달에서 고친 동의어·문장을 먼저 저장한 뒤 합침
+    const pre = await sb.rpc('flow_save_symptom', {
+      p_id: s.id, p_name: s.name, p_syn: syn, p_ask: $('m_ask').value, p_red: $('m_red').value });
+    if(pre.error){ toast('저장 실패: ' + pre.error.message); return; }
+    const { error } = await sb.rpc('flow_merge_symptom', { p_from: s.id, p_into: target.id });
+    if(error){ toast('합치기 실패: ' + error.message); return; }
+    closeModal(); await loadAll();
+    S.sym = S.symptoms.find(x => x.id === target.id) || null;
+    renderSymList(); renderSymPane(); toast(`「${target.name}」에 합쳤습니다`);
+  }
+
   $('m_save').onclick = async () => {
     const name = $('m_name').value.trim();
     if(!name){ toast('증상 이름을 넣으세요'); return; }
     const syn = $('m_syn').value.split(',').map(x => x.trim()).filter(Boolean);
+    const pickId = s ? $('m_merge').value : '';
+    const same = S.symptoms.find(x => x.name === name && (!s || x.id !== s.id));
+    if(s && (pickId || same)){
+      await mergeInto(pickId ? S.symptoms.find(x => x.id === pickId) : same, syn);
+      return;
+    }
+    if(!s && same){ toast(`「${name}」은(는) 이미 있는 증상입니다`); return; }
     const { data, error } = await sb.rpc('flow_save_symptom', {
       p_id: s ? s.id : null, p_name: name, p_syn: syn, p_ask: $('m_ask').value, p_red: $('m_red').value });
     if(error){ toast('저장 실패: ' + error.message); return; }
@@ -277,7 +306,7 @@ function openSymModal(s){
   if(s) $('m_del').onclick = async () => {
     if(!confirm(`「${s.name}」을 지울까요? 약이 하나라도 걸려 있으면 지워지지 않습니다.`)) return;
     const { data, error } = await sb.rpc('flow_delete_symptom', { p_id: s.id });
-    if(error || !data){ toast('약이 걸려 있어 지울 수 없습니다'); return; }
+    if(error || !data){ toast('약이 걸려 있어 지울 수 없습니다 — 다른 증상에 합치거나 약을 먼저 빼세요'); return; }
     closeModal(); S.sym = null; await loadAll(); toast('지웠습니다');
   };
 }
